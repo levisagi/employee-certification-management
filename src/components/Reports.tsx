@@ -5,7 +5,7 @@ import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
     PieChart, Pie, Cell
 } from 'recharts';
-import { FileText, Download, User, Users } from 'lucide-react';
+import { FileText, Download, User, Users, Printer } from 'lucide-react';
 import EmployeeReport from './EmployeeReport'
 interface ReportsProps {
     employees: Employee[];
@@ -20,6 +20,7 @@ const Reports: React.FC<ReportsProps> = ({ employees }) => {
     });
     const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
     const [showEmployeeReport, setShowEmployeeReport] = useState(false);
+    const [showPrintVersion, setShowPrintVersion] = useState(false);
 
     // דוחות מותאמים אישית
     const reports = [
@@ -141,7 +142,7 @@ const Reports: React.FC<ReportsProps> = ({ employees }) => {
             
             acc[dept].סה_כ_עובדים++;
             
-            // חישוב כשירות עובד
+            // חישוב כשירות עובד - עודכן ל-60% ניסיון, 40% הסמכות
             const qualification = calculateEmployeeQualification(emp);
             acc[dept].סה_כ_ציוני_כשירות += qualification;
             
@@ -204,7 +205,7 @@ const Reports: React.FC<ReportsProps> = ({ employees }) => {
     };
 
     const calculateEmployeeQualification = (employee: Employee) => {
-        // חישוב ציון ההסמכות (50%)
+        // חישוב ציון ההסמכות (40%)
         const REQUIRED_CERTIFICATIONS = 7;
         const PROGRESS_PER_CERTIFICATION = Math.round(100 / REQUIRED_CERTIFICATIONS);
         
@@ -214,14 +215,14 @@ const Reports: React.FC<ReportsProps> = ({ employees }) => {
             return cert.isRequired && isValid && hasOJT;
         }).length;
 
-        const certScore = Math.min((validRequiredCerts * PROGRESS_PER_CERTIFICATION), 100) * 0.5;
+        const certScore = Math.min((validRequiredCerts * PROGRESS_PER_CERTIFICATION), 100) * 0.4;
 
-        // חישוב ציון הוותק (50%)
+        // חישוב ציון הוותק (60%)
         const experienceYears = Math.min(
             ((new Date().getTime() - new Date(employee.startDate).getTime()) / (1000 * 60 * 60 * 24 * 365)),
             3
         ) / 3;
-        const experienceScore = experienceYears * 100 * 0.5;
+        const experienceScore = experienceYears * 100 * 0.6;
 
         // ציון כולל
         return Math.round(certScore + experienceScore);
@@ -230,6 +231,14 @@ const Reports: React.FC<ReportsProps> = ({ employees }) => {
     const selectEmployeeForReport = (employee: Employee) => {
         setSelectedEmployee(employee);
         setShowEmployeeReport(true);
+    };
+
+    const handlePrintReport = () => {
+        setShowPrintVersion(true);
+        setTimeout(() => {
+            window.print();
+            setShowPrintVersion(false);
+        }, 100);
     };
 
     return (
@@ -241,8 +250,12 @@ const Reports: React.FC<ReportsProps> = ({ employees }) => {
                 />
             ) : (
                 <div className="bg-white rounded-lg shadow-lg p-6">
-                    <h2 className="text-2xl font-bold mb-6 text-gray-800">דוחות מערכת</h2>
-                    
+                    {/* כותרת עם לוגו */}
+                    <div className="flex items-center gap-3 mb-6">
+                        <img src="/images/logo.svg" alt="CertVision Logo" className="h-8 w-8" />
+                        <h2 className="text-2xl font-bold">דוחות וניתוח נתונים</h2>
+                    </div>
+
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                         {reports.map((category) => (
                             <div key={category.category} className="bg-gray-50 rounded-lg p-4">
@@ -273,15 +286,22 @@ const Reports: React.FC<ReportsProps> = ({ employees }) => {
                                 <h3 className="text-xl font-semibold">
                                     {reports.flatMap(cat => cat.items).find(item => item.id === selectedReport)?.name}
                                 </h3>
-                                {reportData.length > 0 && (
+                                <div className="flex gap-2">
                                     <button
                                         onClick={exportToExcel}
-                                        className="bg-green-100 text-green-600 px-4 py-2 rounded-lg hover:bg-green-200 transition-colors flex items-center gap-2"
+                                        className="flex items-center gap-2 bg-green-50 text-green-600 px-3 py-1.5 rounded-lg hover:bg-green-100 transition-colors"
                                     >
                                         <Download size={16} />
-                                        ייצא ל-Excel
+                                        <span>יצוא לאקסל</span>
                                     </button>
-                                )}
+                                    <button
+                                        onClick={handlePrintReport}
+                                        className="flex items-center gap-2 bg-blue-50 text-blue-600 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors"
+                                    >
+                                        <Printer size={16} />
+                                        <span>הדפסה</span>
+                                    </button>
+                                </div>
                             </div>
 
                             {selectedReport === 'employee-details' ? (
@@ -395,6 +415,37 @@ const Reports: React.FC<ReportsProps> = ({ employees }) => {
                             )}
                         </div>
                     )}
+                </div>
+            )}
+
+            {showPrintVersion && (
+                <div className="fixed inset-0 bg-white z-50 p-8 print:p-0">
+                    <div className="flex flex-col items-center mb-8">
+                        <img src="/images/logo.svg" alt="CertVision Logo" className="h-20 w-20 mb-3" />
+                        <h1 className="text-2xl font-bold text-center mb-1">CertVision</h1>
+                        <p className="text-sm text-gray-600 mb-4">Certification Management Excellence</p>
+                        <h2 className="text-xl font-bold">{reports.flatMap(c => c.items).find(r => r.id === selectedReport)?.name}</h2>
+                    </div>
+                    
+                    {/* כל סוגי הדוחות משתמשים באותה תבנית טבלה לצורך הדפסה */}
+                    <table className="w-full border-collapse">
+                        <thead>
+                            <tr>
+                                {reportData.length > 0 && Object.keys(reportData[0]).map(key => (
+                                    <th key={key} className="border border-gray-300 px-4 py-2 text-right">{key}</th>
+                                ))}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {reportData.map((row, i) => (
+                                <tr key={i}>
+                                    {Object.values(row).map((value, j) => (
+                                        <td key={j} className="border border-gray-300 px-4 py-2">{String(value)}</td>
+                                    ))}
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
                 </div>
             )}
         </div>

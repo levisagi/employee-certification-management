@@ -1,0 +1,21 @@
+<svg width="240" height="240" viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="certGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="white" />
+      <stop offset="100%" stop-color="rgba(255, 255, 255, 0.4)" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Circle Around Logo -->
+  <circle cx="120" cy="120" r="100" stroke="url(#certGradient)" stroke-width="12" fill="none" />
+  
+  <!-- Certificate Document -->
+  <rect x="70" y="60" width="100" height="130" rx="10" stroke="url(#certGradient)" stroke-width="8" fill="none" />
+  
+  <!-- Checkmark -->
+  <path d="M90 120 L110 140 L150 100" stroke="url(#certGradient)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+  
+  <!-- Award Ribbon -->
+  <path d="M120 180 L140 200 L120 220 L100 200 L120 180" fill="url(#certGradient)" />
+  <path d="M120 180 L140 200 L120 220 L100 200 L120 180" stroke="url(#certGradient)" stroke-width="4" fill="none" />
+</svg> 

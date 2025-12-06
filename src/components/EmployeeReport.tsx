@@ -46,7 +46,7 @@ const EmployeeReport: React.FC<EmployeeReportProps> = ({ employee, onClose }) =>
     };
 
     const calculateQualification = () => {
-        // חישוב ציון הסמכות (50%)
+        // חישוב ציון ההסמכות (40%)
         const REQUIRED_CERTIFICATIONS = 7;
         const PROGRESS_PER_CERTIFICATION = Math.round(100 / REQUIRED_CERTIFICATIONS);
         
@@ -56,22 +56,22 @@ const EmployeeReport: React.FC<EmployeeReportProps> = ({ employee, onClose }) =>
             return cert.isRequired && isValid && hasOJT;
         }).length;
 
-        const certScore = Math.min((validRequiredCerts * PROGRESS_PER_CERTIFICATION), 100) * 0.5;
+        const certScore = Math.min((validRequiredCerts * PROGRESS_PER_CERTIFICATION), 100) * 0.4;
 
-        // חישוב ציון הוותק (50%)
+        // חישוב ציון הוותק (60%)
         const experienceYears = Math.min(
             ((new Date().getTime() - new Date(employee.startDate).getTime()) / (1000 * 60 * 60 * 24 * 365)),
             3
         ) / 3;
-        const experienceScore = experienceYears * 100 * 0.5;
+        const experienceScore = experienceYears * 100 * 0.6;
 
         // ציון כולל
         return Math.round(certScore + experienceScore);
     };
     
     const getQualificationColor = (score: number) => {
-        if (score >= 90) return 'text-green-600 bg-green-50';
-        if (score >= 70) return 'text-yellow-600 bg-yellow-50';
+        if (score >= 80) return 'text-green-600 bg-green-50';
+        if (score >= 40) return 'text-yellow-600 bg-yellow-50';
         return 'text-red-600 bg-red-50';
     };
 
@@ -132,7 +132,10 @@ const EmployeeReport: React.FC<EmployeeReportProps> = ({ employee, onClose }) =>
         <div className={`${showPrintVersion ? 'bg-white fixed inset-0 z-50 overflow-auto p-8' : 'bg-white rounded-lg shadow-lg p-6 max-w-4xl mx-auto'}`}>
             {!showPrintVersion && (
                 <div className="flex justify-between items-center mb-6 print:hidden">
-                    <h2 className="text-2xl font-bold">דוח עובד</h2>
+                    <div className="flex items-center gap-3">
+                        <img src="/images/logo.svg" alt="CertVision Logo" className="h-8 w-8" />
+                        <h2 className="text-2xl font-bold">דוח עובד</h2>
+                    </div>
                     <div className="flex gap-3">
                         <button
                             onClick={exportToExcel}
@@ -156,6 +159,18 @@ const EmployeeReport: React.FC<EmployeeReportProps> = ({ employee, onClose }) =>
                                 <span>סגור</span>
                             </button>
                         )}
+                    </div>
+                </div>
+            )}
+
+            {/* הלוגו והכותרת לגרסת ההדפסה */}
+            {showPrintVersion && (
+                <div className="flex justify-center items-center mb-8 print:block">
+                    <div className="flex flex-col items-center">
+                        <img src="/images/logo.svg" alt="CertVision Logo" className="h-20 w-20 mb-3" />
+                        <h1 className="text-2xl font-bold text-center mb-1">CertVision</h1>
+                        <p className="text-sm text-gray-600 mb-4">Certification Management Excellence</p>
+                        <h2 className="text-xl font-bold">דוח עובד - {employee.firstName} {employee.lastName}</h2>
                     </div>
                 </div>
             )}

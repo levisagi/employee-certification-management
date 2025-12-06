@@ -1,15 +1,16 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Employee, Certification } from '../models/employee';
 import ExperienceBar from './ExperienceBar';
-import { Users, FileText, ChevronRight, ChevronLeft } from 'lucide-react';
+import { Users, FileText, ChevronRight, ChevronLeft, ClipboardCopy } from 'lucide-react';
 
 interface EmployeeCardProps {
     employee: Employee;
     onEdit: (employee: Employee) => void;
     onDelete: (id: string | undefined) => void;
+    onCopyCertifications?: (employee: Employee) => void; // פרופ חדש להעתקת הסמכות
 }
 
-const EmployeeCard = ({ employee, onEdit, onDelete }: EmployeeCardProps) => {
+const EmployeeCard = ({ employee, onEdit, onDelete, onCopyCertifications }: EmployeeCardProps) => {
     const [selectedCertificate, setSelectedCertificate] = useState<string | null>(null);
     const [selectedCertName, setSelectedCertName] = useState<string>('');
     const [certPage, setCertPage] = useState(0);
@@ -48,39 +49,33 @@ const EmployeeCard = ({ employee, onEdit, onDelete }: EmployeeCardProps) => {
         };
     };
 
-    const qualificationProgress = useMemo(() => {
+    const calculateTotalQualification = useMemo(() => {
+        // חישוב ציון ההסמכות (40%)
         const REQUIRED_CERTIFICATIONS = 7;
         const PROGRESS_PER_CERTIFICATION = Math.round(100 / REQUIRED_CERTIFICATIONS);
-
-        const requiredCerts = employee.certifications.filter(cert => cert.isRequired === true);
-        if (requiredCerts.length === 0) return 0;
-
-        const validRequiredCerts = requiredCerts.filter(cert => {
+        
+        const validRequiredCerts = employee.certifications.filter(cert => {
             const isValid = new Date(cert.expiryDate) > new Date();
             const hasOJT = cert.ojt1 && cert.ojt2;
-            return isValid && hasOJT;
-        });
+            return cert.isRequired && isValid && hasOJT;
+        }).length;
 
-        return Math.min((validRequiredCerts.length * PROGRESS_PER_CERTIFICATION), 100);
-    }, [employee.certifications]);
+        const certScore = Math.min((validRequiredCerts * PROGRESS_PER_CERTIFICATION), 100) * 0.4;
 
-    const calculateTotalQualification = useMemo(() => {
-        const experienceWeight = 0.5;
+        // חישוב ציון הוותק (60%)
         const experienceYears = Math.min(
             ((new Date().getTime() - new Date(employee.startDate).getTime()) / (1000 * 60 * 60 * 24 * 365)),
             3
         ) / 3;
-        const experienceScore = experienceYears * 100 * experienceWeight;
+        const experienceScore = experienceYears * 100 * 0.6;
 
-        const certificationsWeight = 0.5;
-        const certificationsScore = qualificationProgress * certificationsWeight;
-
-        return Math.round(experienceScore + certificationsScore);
-    }, [employee.startDate, qualificationProgress]);
+        // ציון כולל
+        return Math.round(certScore + experienceScore);
+    }, [employee.certifications, employee.startDate]);
 
     const getQualificationColor = (score: number) => {
-        if (score >= 90) return '#10B981'; // ירוק
-        if (score >= 70) return '#F59E0B'; // צהוב
+        if (score >= 80) return '#10B981'; // ירוק
+        if (score >= 40) return '#F59E0B'; // כתום
         return '#EF4444'; // אדום
     };
 
@@ -164,15 +159,15 @@ const EmployeeCard = ({ employee, onEdit, onDelete }: EmployeeCardProps) => {
     const emptyCardsToAdd = certsPerPage - visibleCertifications.length;
 
     return (
-        <div className="bg-[#1E293B] rounded-xl shadow-lg p-4 border border-[#334155]">
+        <div className="bg-[#1E293B] rounded-xl shadow-lg p-3 border border-[#334155]">
             {/* Header Section */}
-            <div className="flex flex-col items-center mb-4 relative">
+            <div className="flex flex-col items-center mb-3 relative">
                 {/* Action Buttons */}
                 <div className="absolute top-0 right-0 flex gap-1">
                     <button
                         onClick={() => onEdit(employee)}
-                        className="text-xs bg-blue-500/10 text-blue-500 px-2 py-0.5 rounded-lg 
-                        hover:bg-blue-500/20 transition-colors"
+                        className="text-xs bg-[#172A46] text-gray-300 px-2 py-1 rounded-lg 
+                        hover:bg-[#1F3A67] transition-colors flex items-center gap-0.5"
                     >
                         ערוך
                     </button>
@@ -182,15 +177,25 @@ const EmployeeCard = ({ employee, onEdit, onDelete }: EmployeeCardProps) => {
                                 onDelete(employee._id);
                             }
                         }}
-                        className="text-xs bg-red-500/10 text-red-500 px-2 py-0.5 rounded-lg 
-                        hover:bg-red-500/20 transition-colors"
+                        className="text-xs bg-[#172A46] text-gray-300 px-2 py-1 rounded-lg 
+                        hover:bg-[#1F3A67] transition-colors flex items-center gap-0.5"
                     >
                         מחק
                     </button>
+                    {onCopyCertifications && (
+                        <button
+                            onClick={() => onCopyCertifications(employee)}
+                            className="text-xs bg-[#172A46] text-gray-300 px-2 py-1 rounded-lg 
+                            hover:bg-[#1F3A67] transition-colors flex items-center gap-0.5"
+                        >
+                            <ClipboardCopy size={11} className="ml-0.5" />
+                            העתק
+                        </button>
+                    )}
                 </div>
 
                 {/* Profile Image with Qualification Circle */}
-                <div className="relative w-24 h-24 mb-3">
+                <div className="relative w-28 h-28 mb-2">
                     <svg
                         className="absolute top-0 left-0 w-full h-full -rotate-90 transform"
                         viewBox="0 0 100 100"
@@ -228,17 +233,17 @@ const EmployeeCard = ({ employee, onEdit, onDelete }: EmployeeCardProps) => {
                             />
                         ) : (
                             <div className="w-full h-full rounded-full bg-[#334155] flex items-center justify-center border-2 border-[#334155]">
-                                <Users size={24} className="text-gray-400" />
+                                <Users size={20} className="text-gray-400" />
                             </div>
                         )}
                     </div>
 
                     <div 
-                        className="absolute -bottom-2 -right-2 bg-[#1E293B] rounded-full w-8 h-8 
+                        className="absolute -bottom-2 -right-2 bg-[#1E293B] rounded-full w-7 h-7 
                         flex items-center justify-center border-2"
                         style={{ borderColor: getQualificationColor(calculateTotalQualification) }}
                     >
-                        <span className="text-xs font-bold" style={{ color: getQualificationColor(calculateTotalQualification) }}>
+                        <span className="text-[10px] font-bold" style={{ color: getQualificationColor(calculateTotalQualification) }}>
                             {calculateTotalQualification}%
                         </span>
                     </div>
@@ -246,38 +251,51 @@ const EmployeeCard = ({ employee, onEdit, onDelete }: EmployeeCardProps) => {
 
                 {/* Employee Details */}
                 <div className="text-center">
-                    <h2 className="text-lg font-bold text-gray-100 mb-0.5">
+                    <h2 className="text-base font-bold text-gray-100 mb-0.5">
                         {employee.firstName} {employee.lastName}
                     </h2>
-                    <p className="text-sm text-gray-400 leading-tight">{employee.role}</p>
+                    <p className="text-xs text-gray-400 leading-tight">{employee.role}</p>
                     <p className="text-xs text-gray-500 leading-tight">מס׳ {employee.employeeNumber}</p>
                 </div>
 
                 {/* Progress Bars Section */}
-                <div className="w-full mt-4 space-y-2">
+                <div className="w-full mt-2 space-y-1.5">
                     {/* פס התקדמות הסמכות */}
-                    <div>
-                        <div className="flex justify-between items-center mb-1">
-                            <span className="text-xs text-gray-400">התקדמות הסמכות</span>
-                            <div className="flex items-center gap-1">
-                                <span className="text-xs font-medium text-gray-300">
-                                    {qualificationProgress}% 
-                                </span>
-                                <span className="text-xs text-gray-500">
-                                    ({Math.min(employee.certifications.filter(cert => cert.isRequired).length, 7)}/7)
-                                </span>
+                    {(() => {
+                        // חישוב אחוז ההסמכות התקפות
+                        const validRequiredCerts = employee.certifications.filter(cert => {
+                            const isValid = new Date(cert.expiryDate) > new Date();
+                            const hasOJT = cert.ojt1 && cert.ojt2;
+                            return cert.isRequired && isValid && hasOJT;
+                        }).length;
+                        
+                        const certificationPercentage = Math.min(Math.round(validRequiredCerts / 7 * 100), 100);
+                        
+                        return (
+                            <div>
+                                <div className="flex justify-between items-center mb-0.5">
+                                    <span className="text-xs text-gray-400">התקדמות הסמכות</span>
+                                    <div className="flex items-center gap-1">
+                                        <span className="text-xs font-medium text-gray-300">
+                                            {certificationPercentage}% 
+                                        </span>
+                                        <span className="text-xs text-gray-500">
+                                            ({validRequiredCerts}/7)
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className="w-full bg-[#334155] rounded-full h-1.5">
+                                    <div
+                                        className={`h-1.5 rounded-full transition-all duration-500 ${
+                                            certificationPercentage >= 80 ? 'bg-emerald-500' :
+                                            certificationPercentage >= 40 ? 'bg-yellow-500' : 'bg-red-500'
+                                        }`}
+                                        style={{ width: `${certificationPercentage}%` }}
+                                    />
+                                </div>
                             </div>
-                        </div>
-                        <div className="w-full bg-[#334155] rounded-full h-2">
-                            <div
-                                className={`h-2 rounded-full transition-all duration-500 ${
-                                    qualificationProgress >= 90 ? 'bg-emerald-500' :
-                                    qualificationProgress >= 60 ? 'bg-yellow-500' : 'bg-red-500'
-                                }`}
-                                style={{ width: `${qualificationProgress}%` }}
-                            />
-                        </div>
-                    </div>
+                        );
+                    })()}
 
                     {/* ותק */}
                     <ExperienceBar startDate={employee.startDate} />
@@ -286,8 +304,8 @@ const EmployeeCard = ({ employee, onEdit, onDelete }: EmployeeCardProps) => {
 
             {/* Certifications */}
             <div>
-                <div className="flex justify-between items-center mb-2">
-                    <h3 className="font-bold text-sm text-gray-300">
+                <div className="flex justify-between items-center mb-1.5">
+                    <h3 className="font-bold text-xs text-gray-300">
                         הסמכות ({employee.certifications.length})
                     </h3>
                     <div className="flex items-center">
@@ -296,10 +314,10 @@ const EmployeeCard = ({ employee, onEdit, onDelete }: EmployeeCardProps) => {
                                 <button 
                                     onClick={prevPage} 
                                     disabled={certPage === 0 || isAnimating}
-                                    className={`p-1 rounded ${certPage === 0 ? 'text-gray-600' : 'text-gray-400 hover:text-gray-200'}`}
+                                    className={`p-0.5 rounded ${certPage === 0 ? 'text-gray-600' : 'text-gray-400 hover:text-gray-200'}`}
                                     aria-label="הסמכות קודמות"
                                 >
-                                    <ChevronRight size={16} />
+                                    <ChevronRight size={14} />
                                 </button>
                                 <span className="text-xs text-gray-400">
                                     {certPage + 1}/{maxPage + 1}
@@ -307,10 +325,10 @@ const EmployeeCard = ({ employee, onEdit, onDelete }: EmployeeCardProps) => {
                                 <button 
                                     onClick={nextPage} 
                                     disabled={certPage >= maxPage || isAnimating}
-                                    className={`p-1 rounded ${certPage >= maxPage ? 'text-gray-600' : 'text-gray-400 hover:text-gray-200'}`}
+                                    className={`p-0.5 rounded ${certPage >= maxPage ? 'text-gray-600' : 'text-gray-400 hover:text-gray-200'}`}
                                     aria-label="הסמכות הבאות"
                                 >
-                                    <ChevronLeft size={16} />
+                                    <ChevronLeft size={14} />
                                 </button>
                             </div>
                         )}
@@ -320,26 +338,13 @@ const EmployeeCard = ({ employee, onEdit, onDelete }: EmployeeCardProps) => {
                 <div className="relative overflow-hidden">
                     <div 
                         ref={certsContainerRef}
-                        className="space-y-2"
+                        className="space-y-1.5"
                         style={{
                             transform: 'translateX(0)',
                             opacity: 1
                         }}
                     >
-                        {/* בדיקה אם אין הסמכות בכלל */}
-                        {employee.certifications.length === 0 ? (
-                            <>
-                                <div className="flex items-center justify-center h-[70px] text-gray-400 p-3 rounded-lg border border-[#334155] border-dashed">
-                                    אין הסמכות להצגה
-                                </div>
-                                <div className="h-[70px] text-gray-400 p-3 rounded-lg border border-[#334155] border-dashed mt-2 flex items-center justify-center">
-                                    <span className="text-xs text-gray-500 italic">אין הסמכה נוספת</span>
-                                </div>
-                                <div className="h-[70px] text-gray-400 p-3 rounded-lg border border-[#334155] border-dashed mt-2 flex items-center justify-center">
-                                    <span className="text-xs text-gray-500 italic">אין הסמכה נוספת</span>
-                                </div>
-                            </>
-                        ) : (
+                        {visibleCertifications.length > 0 ? (
                             <>
                                 {/* הצגת ההסמכות הנראות */}
                                 {visibleCertifications.map((cert, index) => {
@@ -347,81 +352,81 @@ const EmployeeCard = ({ employee, onEdit, onDelete }: EmployeeCardProps) => {
                                     return (
                                         <div 
                                             key={index} 
-                                            className={`p-3 rounded-lg border bg-[#1E293B] hover:border-blue-500/20 transition-colors min-h-[70px]
+                                            className={`p-2 rounded-lg border bg-[#1E293B] hover:border-blue-500/20 transition-colors min-h-[65px]
                                                 ${cert.isRequired ? 'border-blue-500/20 bg-blue-500/5' : 'border-[#334155]'}`}
                                         >
                                             <div className="flex flex-col justify-between h-full">
-                                                <div className="flex justify-between items-start mb-2">
-                                                    <div className="flex items-center gap-2">
-                                                        <p className="font-medium text-sm text-gray-200">{cert.name}</p>
-                                                        {cert.isRequired && (
-                                                            <span className="text-xs bg-blue-500/10 text-blue-400 px-1.5 py-0.5 rounded-full">
-                                                                חובה
-                                                            </span>
-                                                        )}
+                                                <div className="flex justify-between items-start mb-1">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <p className="font-medium text-xs text-gray-200">{cert.name}</p>
                                                     </div>
-                                                    <span className={`text-xs px-1.5 py-0.5 rounded-full ${certStatus.color}`}>
+                                                    <span className={`text-xs px-1 py-0.5 rounded-full ${certStatus.color}`}>
                                                         {certStatus.text}
                                                     </span>
                                                 </div>
 
-                                                <div className="space-y-1 text-xs">
+                                                <div className="space-y-0.5 text-xs">
                                                     <div className={`flex items-center gap-1 ${cert.ojt1 ? 'text-emerald-500' : 'text-gray-500'}`}>
-                                                        <span>✓ OJT 1:</span>
+                                                        <span>✓ OJT ראשון:</span>
                                                         {cert.ojt1 ? (
-                                                            <div className="flex gap-1">
+                                                            <div className="flex items-center gap-1 text-xs">
                                                                 <span>{cert.ojt1.mentor}</span>
-                                                                <span className="text-gray-500">|</span>
-                                                                <span>{formatDate(cert.ojt1.date)}</span>
+                                                                <span className="text-gray-500">
+                                                                    <span>{formatDate(cert.ojt1.date)}</span>
+                                                                </span>
                                                             </div>
                                                         ) : (
-                                                            <span className="italic">טרם בוצע</span>
+                                                            <span className="text-xs">חסר</span>
                                                         )}
                                                     </div>
-
                                                     <div className={`flex items-center gap-1 ${cert.ojt2 ? 'text-emerald-500' : 'text-gray-500'}`}>
-                                                        <span>✓ OJT 2:</span>
+                                                        <span>✓ OJT שני:</span>
                                                         {cert.ojt2 ? (
-                                                            <div className="flex gap-1">
+                                                            <div className="flex items-center gap-1 text-xs">
                                                                 <span>{cert.ojt2.mentor}</span>
-                                                                <span className="text-gray-500">|</span>
-                                                                <span>{formatDate(cert.ojt2.date)}</span>
+                                                                <span className="text-gray-500">
+                                                                    <span>{formatDate(cert.ojt2.date)}</span>
+                                                                </span>
                                                             </div>
                                                         ) : (
-                                                            <span className="italic">טרם בוצע</span>
+                                                            <span className="text-xs">חסר</span>
                                                         )}
                                                     </div>
-                                                </div>
-
-                                                <div className="flex justify-between items-center mt-2 pt-1 border-t border-[#334155]">
-                                                    <p className="text-xs text-gray-400">תוקף: {formatDate(cert.expiryDate)}</p>
-                                                    {cert.certificate && (
-                                                        <button
-                                                            onClick={() => handleShowCertificate(cert)}
-                                                            className="text-xs px-1.5 py-0.5 bg-[#334155] text-gray-300 
-                                                            rounded-full hover:bg-[#405171] transition-colors flex items-center gap-1"
-                                                        >
-                                                            <FileText size={12} className="text-blue-400" />
-                                                            תעודה
-                                                        </button>
-                                                    )}
+                                                    
+                                                    <div className="flex justify-between items-center mt-1 pt-0.5 border-t border-[#334155]">
+                                                        <p className="text-xs text-gray-400">תוקף: {formatDate(cert.expiryDate)}</p>
+                                                        {cert.certificate && (
+                                                            <button
+                                                                onClick={() => handleShowCertificate(cert)}
+                                                                className="text-xs px-1 py-0.5 bg-[#334155] text-gray-300 
+                                                                rounded-full hover:bg-[#405171] transition-colors flex items-center gap-1"
+                                                            >
+                                                                <FileText size={10} className="text-blue-400" />
+                                                                תעודה
+                                                            </button>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                     );
                                 })}
 
-                                {/* הוספת פריטים ריקים להשלמה ל-3 פריטים */}
+                                {/* הוספת כרטיסים ריקים אם יש פחות מ-3 הסמכות */}
                                 {Array.from({ length: emptyCardsToAdd }).map((_, index) => (
                                     <div 
                                         key={`empty-${index}`} 
-                                        className="p-3 rounded-lg border border-[#334155] border-dashed h-[70px] mt-2
+                                        className="p-2 rounded-lg border border-[#334155] border-dashed h-[65px] mt-1.5
                                         bg-transparent flex items-center justify-center"
                                     >
                                         <span className="text-xs text-gray-500 italic">אין הסמכה נוספת</span>
                                     </div>
                                 ))}
                             </>
+                        ) : (
+                            <div className="text-center py-4">
+                                <p className="text-gray-500 text-sm">אין הסמכות להצגה</p>
+                            </div>
                         )}
                     </div>
 
@@ -442,7 +447,7 @@ const EmployeeCard = ({ employee, onEdit, onDelete }: EmployeeCardProps) => {
                     )}
                 </div>
             </div>
-
+            
             {/* Modal להצגת התעודה */}
             {selectedCertificate && (
                 <div 

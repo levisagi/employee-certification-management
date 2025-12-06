@@ -45,13 +45,22 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSubmit, initialData, onCa
         if (initialData) {
             const { certifications: certs, ...rest } = initialData;
             setFormData({
-                ...rest,
-                startDate: new Date(rest.startDate)
+                firstName: rest.firstName,
+                lastName: rest.lastName,
+                employeeNumber: rest.employeeNumber,
+                department: rest.department,
+                role: rest.role,
+                profileImage: rest.profileImage || '',
+                phoneNumber: rest.phoneNumber || '',
+                email: rest.email || '',
+                startDate: rest.startDate || new Date(),
             });
             setCertifications(certs.map(cert => ({
                 ...cert,
                 expiryDate: new Date(cert.expiryDate),
                 issueDate: new Date(cert.issueDate),
+                startDate: cert.startDate ? new Date(cert.startDate) : undefined,
+                endDate: cert.endDate ? new Date(cert.endDate) : undefined,
                 ojt1: cert.ojt1 ? { ...cert.ojt1, date: new Date(cert.ojt1.date) } : undefined,
                 ojt2: cert.ojt2 ? { ...cert.ojt2, date: new Date(cert.ojt2.date) } : undefined
             })));
@@ -133,6 +142,19 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSubmit, initialData, onCa
         }
     };
 
+    const addCertification = () => {
+        const newCertification: Certification = {
+            name: '',
+            issueDate: new Date(),
+            expiryDate: new Date(),
+            status: 'valid',
+            isRequired: false,
+            startDate: undefined,
+            endDate: undefined
+        };
+        setCertifications([...certifications, newCertification]);
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
@@ -162,17 +184,6 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSubmit, initialData, onCa
         } finally {
             setIsSubmitting(false);
         }
-    };
-
-    const addCertification = () => {
-        const newCertification: Certification = {
-            name: '',
-            issueDate: new Date(),
-            expiryDate: new Date(),
-            status: 'valid',
-            isRequired: false
-        };
-        setCertifications([...certifications, newCertification]);
     };
 
     return (
@@ -217,6 +228,30 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSubmit, initialData, onCa
 
                 {/* פרטי העובד */}
                 <div className="col-span-3 grid grid-cols-3 gap-4">
+                    <div className="col-span-3 flex justify-end gap-2 mb-2">
+                        <button
+                            type="button"
+                            onClick={addCertification}
+                            className="text-xs px-3 py-1 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100 transition-colors flex items-center gap-1 shadow-sm"
+                        >
+                            <span>+</span>
+                            <span>הוסף הסמכה</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={onCancel}
+                            className="text-xs px-3 py-1 bg-gray-100 text-gray-600 rounded-md hover:bg-gray-200 transition-colors shadow-sm"
+                        >
+                            ביטול
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={isSubmitting}
+                            className="text-xs px-3 py-1 bg-emerald-500 text-white rounded-md hover:bg-emerald-600 transition-colors flex items-center gap-1 shadow-sm"
+                        >
+                            {isSubmitting ? 'שומר...' : 'עדכן'}
+                        </button>
+                    </div>
                     <div>
                         <label className="block text-sm mb-1 text-gray-600">מספר עובד</label>
                         <input
@@ -248,28 +283,6 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSubmit, initialData, onCa
                         />
                     </div>
                     <div>
-                        <label className="block text-sm mb-1 text-gray-600">טלפון</label>
-                        <input
-                            type="tel"
-                            value={formData.phoneNumber}
-                            onChange={(e) => setFormData({...formData, phoneNumber: e.target.value})}
-                            className="w-full p-2 text-sm border rounded focus:ring-1 focus:ring-blue-500 outline-none"
-                            required
-                            dir="ltr"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm mb-1 text-gray-600">אימייל</label>
-                        <input
-                            type="email"
-                            value={formData.email}
-                            onChange={(e) => setFormData({...formData, email: e.target.value})}
-                            className="w-full p-2 text-sm border rounded focus:ring-1 focus:ring-blue-500 outline-none"
-                            required
-                            dir="ltr"
-                        />
-                    </div>
-                    <div>
                         <label className="block text-sm mb-1 text-gray-600">תפקיד</label>
                         <input
                             type="text"
@@ -292,39 +305,16 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSubmit, initialData, onCa
                             <option value="מכ״מ">מכ״מ</option>
                         </select>
                     </div>
-                    <div>
-                        <label className="block text-sm mb-1 text-gray-600">תאריך תחילת עבודה</label>
-                        <input
-                            type="date"
-                            value={formatDateForInput(formData.startDate)}
-                            onChange={(e) => {
-                                const newDate = e.target.value ? new Date(e.target.value) : new Date();
-                                if (!isNaN(newDate.getTime())) {
-                                    setFormData({...formData, startDate: newDate});
-                                }
-                            }}
-                            className="w-full p-2 text-sm border rounded focus:ring-1 focus:ring-blue-500 outline-none"
-                            required
-                            dir="ltr"
-                        />
-                    </div>
                 </div>
             </div>
 
             {/* הסמכות */}
             <div className="mt-6">
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-3">
                     <h3 className="text-lg font-medium text-gray-700">הסמכות</h3>
-                    <button
-                        type="button"
-                        onClick={addCertification}
-                        className="text-sm px-4 py-2 bg-blue-50 text-blue-600 rounded-full hover:bg-blue-100 transition-colors"
-                    >
-                        + הוסף הסמכה
-                    </button>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-2">
                     {certifications.map((cert, index) => (
                         <CertificationForm
                             key={index}
@@ -342,35 +332,6 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSubmit, initialData, onCa
                         />
                     ))}
                 </div>
-            </div>
-
-            {/* כפתורי פעולה */}
-            <div className="flex justify-between items-center gap-3 mt-6 border-t pt-6">
-                <button
-                    type="button"
-                    onClick={onCancel}
-                    className="px-6 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors"
-                    disabled={isSubmitting}
-                >
-                    ביטול
-                </button>
-                <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className={`px-6 py-2 bg-blue-600 text-white rounded-lg transition-colors flex items-center gap-2
-                        ${isSubmitting ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-700'}`}
-                >
-                    {isSubmitting ? (
-                        <>
-                            <span className="animate-spin">⌛</span>
-                            <span>שומר...</span>
-                        </>
-                    ) : (
-                        <>
-                            <span>{initialData ? '✓ עדכן' : '✓ שמור'}</span>
-                        </>
-                    )}
-                </button>
             </div>
 
             {/* חלון העריכה */}

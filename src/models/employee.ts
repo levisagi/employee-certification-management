@@ -1,6 +1,6 @@
 export interface OJT {
-    mentor: string;
     date: Date;
+    mentor: string;
 }
 
 export interface Certification {
@@ -8,6 +8,8 @@ export interface Certification {
     name: string;
     issueDate: Date;
     expiryDate: Date;
+    startDate?: Date;
+    endDate?: Date;
     status: 'valid' | 'expired' | 'expiring-soon';
     isRequired: boolean;
     ojt1?: OJT;

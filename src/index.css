@@ -6,9 +6,10 @@ body {
   direction: rtl;
   margin: 0;
   font-family: -apple-system, system-ui, sans-serif;
+  overflow-x: hidden; /* למניעת גלילה אופקית לא רצויה */
 }
 
-/* אנימציות מעבר עמוד */
+/* אנימציות מעבר עמוד - משופר */
 .page-transition-enter {
   opacity: 0;
   transform: scale(0.95);
@@ -23,6 +24,9 @@ body {
 .page-transition-exit {
   opacity: 1;
   transform: scale(1);
+  position: absolute;
+  width: 100%;
+  z-index: 1;
 }
 
 .page-transition-exit-active {
@@ -31,20 +35,20 @@ body {
   transition: opacity 300ms ease-out, transform 300ms ease-out;
 }
 
-/* סגנונות לאזור הגריד */
+/* תיקון לבעיית הקפיצות בזמן מעבר */
+.page-container {
+  position: relative;
+  min-height: 600px; /* גובה קבוע למניעת קפיצות */
+  overflow: visible !important; /* חשוב מאוד: מאפשר לכפתורים לצאת מגבולות המיכל */
+  width: 100%;
+  padding: 0 20px; /* הקטנת הפדינג כי אין יותר כפתורים בצדדים */
+}
+
+/* סגנונות לאזור הגריד - משופר */
 .grid-container {
   min-height: 600px;
   position: relative;
-}
-
-/* אנימציות לכפתורי ניווט */
-.nav-button {
-  transition: all 0.3s ease-in-out;
-}
-
-.nav-button:hover:not(:disabled) {
-  transform: scale(1.05);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
 }
 
 /* אנימציות נוספות */
@@ -93,4 +97,42 @@ body {
 .pagination-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* תיקונים נוספים למעברים חלקים */
+.transition-wrapper {
+  position: relative;
+  height: 100%;
+}
+
+/* שליטה טובה יותר בגלילה */
+html {
+  scroll-behavior: smooth;
+}
+
+/* מנגנון למניעת קפיצות כאשר תוכן משתנה */
+.transition-container {
+  position: relative;
+  perspective: 1000px;
+  overflow: visible;
+  z-index: 1;
+}
+
+/* תיקונים לקונטיינר העיקרי */
+.container {
+  max-width: 100%;
+  position: relative;
+  overflow: visible !important;
+}
+
+/* התאמות למסכים קטנים */
+@media (max-width: 768px) {
+  .page-container {
+    padding: 0 15px;
+  }
+}
+
+/* תיקון לבעיית overflow בדפדפנים מסוימים */
+#root, .min-h-screen {
+  overflow: visible;
 }

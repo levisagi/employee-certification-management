@@ -16,8 +16,9 @@ const Dashboard: React.FC<DashboardProps> = ({ employees }) => {
         avgQualification: 0
     });
 
-    // חישוב כשירות לעובד בודד
+    // חישוב כשירות לעובד בודד - עודכן ל-60% ניסיון, 40% הסמכות
     const calculateEmployeeQualification = (employee: Employee) => {
+        // חישוב ציון הסמכות (40%)
         const REQUIRED_CERTIFICATIONS = 7;
         const PROGRESS_PER_CERTIFICATION = Math.round(100 / REQUIRED_CERTIFICATIONS);
         
@@ -27,14 +28,16 @@ const Dashboard: React.FC<DashboardProps> = ({ employees }) => {
             return cert.isRequired && isValid && hasOJT;
         }).length;
 
-        const certScore = Math.min((validRequiredCerts * PROGRESS_PER_CERTIFICATION), 100) * 0.5;
+        const certScore = Math.min((validRequiredCerts * PROGRESS_PER_CERTIFICATION), 100) * 0.4;
 
+        // חישוב ציון הוותק (60%)
         const experienceYears = Math.min(
             ((new Date().getTime() - new Date(employee.startDate).getTime()) / (1000 * 60 * 60 * 24 * 365)),
             3
         ) / 3;
-        const experienceScore = experienceYears * 100 * 0.5;
+        const experienceScore = experienceYears * 100 * 0.6;
 
+        // ציון כולל
         return Math.round(certScore + experienceScore);
     };
 
