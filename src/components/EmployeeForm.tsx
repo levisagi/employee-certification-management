@@ -172,6 +172,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSubmit, initialData, onCa
 
             const employeeData: Employee = {
                 ...formData,
+                startDate: formData.startDate instanceof Date ? formData.startDate : new Date(formData.startDate),
                 certifications,
                 _id: initialData?._id
             };
@@ -304,6 +305,19 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSubmit, initialData, onCa
                             <option value="ניווט">ניווט</option>
                             <option value="מכ״מ">מכ״מ</option>
                         </select>
+                    </div>
+                    <div>
+                        <label className="block text-sm mb-1 text-gray-600">תאריך תחילת עבודה</label>
+                        <input
+                            type="date"
+                            value={formatDateForInput(formData.startDate)}
+                            onChange={(e) => {
+                                const newDate = e.target.value ? new Date(e.target.value + 'T12:00:00') : new Date();
+                                setFormData({...formData, startDate: newDate});
+                            }}
+                            className="w-full p-2 text-sm border rounded focus:ring-1 focus:ring-blue-500 outline-none"
+                            required
+                        />
                     </div>
                 </div>
             </div>

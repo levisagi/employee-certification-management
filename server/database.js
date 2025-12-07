@@ -4,9 +4,12 @@ require('dotenv').config();
 // יצירת connection pool ל-PostgreSQL
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? {
+    ssl: {
         rejectUnauthorized: false
-    } : false
+    },
+    max: 20, // מקסימום חיבורים
+    idleTimeoutMillis: 30000, // 30 שניות
+    connectionTimeoutMillis: 10000, // 10 שניות timeout לחיבור
 });
 
 // בדיקת חיבור
@@ -16,7 +19,7 @@ pool.on('connect', () => {
 
 pool.on('error', (err) => {
     console.error('Unexpected error on idle client', err);
-    process.exit(-1);
+    // לא לצאת מהתהליך - רק לרשום את השגיאה
 });
 
 // פונקציה לביצוע שאילתות

@@ -34,18 +34,21 @@ const EmployeeCard = ({ employee, onEdit, onDelete, onCopyCertifications }: Empl
 
         if (daysUntilExpiry < 0) {
             return { 
-                color: 'bg-red-500/10 text-red-500', 
-                text: 'נדרש רענון בהקדם'
+                color: 'bg-yellow-500/10 text-yellow-500', 
+                text: 'נדרש רענון בהקדם',
+                subText: null
             };
         } else if (daysUntilExpiry <= 365) {
             return { 
-                color: 'bg-yellow-500/10 text-yellow-500', 
-                text: `נדרש רענון בעוד ${monthsUntilExpiry} חודשים`
+                color: 'bg-emerald-500/10 text-emerald-500', 
+                text: 'בתוקף',
+                subText: `(נדרש רענון בעוד ${monthsUntilExpiry} חודשים)`
             };
         }
         return { 
             color: 'bg-emerald-500/10 text-emerald-500', 
-            text: 'בתוקף'
+            text: 'בתוקף',
+            subText: null
         };
     };
 
@@ -256,6 +259,11 @@ const EmployeeCard = ({ employee, onEdit, onDelete, onCopyCertifications }: Empl
                     </h2>
                     <p className="text-xs text-gray-400 leading-tight">{employee.role}</p>
                     <p className="text-xs text-gray-500 leading-tight">מס׳ {employee.employeeNumber}</p>
+                    <p className="text-xs text-gray-500 leading-tight mt-0.5">
+                        תחילת עבודה: {formatDate(employee.startDate)} 
+                        <span className="text-gray-600 mx-1">•</span>
+                        ותק: {Math.floor((new Date().getTime() - new Date(employee.startDate).getTime()) / (1000 * 60 * 60 * 24 * 365))} שנים
+                    </p>
                 </div>
 
                 {/* Progress Bars Section */}
@@ -352,57 +360,36 @@ const EmployeeCard = ({ employee, onEdit, onDelete, onCopyCertifications }: Empl
                                     return (
                                         <div 
                                             key={index} 
-                                            className={`p-2 rounded-lg border bg-[#1E293B] hover:border-blue-500/20 transition-colors min-h-[65px]
+                                            className={`p-1.5 rounded-lg border bg-[#1E293B] hover:border-blue-500/20 transition-colors min-h-[45px]
                                                 ${cert.isRequired ? 'border-blue-500/20 bg-blue-500/5' : 'border-[#334155]'}`}
                                         >
-                                            <div className="flex flex-col justify-between h-full">
-                                                <div className="flex justify-between items-start mb-1">
-                                                    <div className="flex items-center gap-1.5">
-                                                        <p className="font-medium text-xs text-gray-200">{cert.name}</p>
-                                                    </div>
-                                                    <span className={`text-xs px-1 py-0.5 rounded-full ${certStatus.color}`}>
+                                            <div className="flex flex-col justify-center h-full py-1">
+                                                {/* שורה 1: שם הקורס והסטטוס */}
+                                                <div className="flex items-center justify-between gap-2 mb-1">
+                                                    <p className="font-bold text-xs text-white truncate">{cert.name}</p>
+                                                    <span className={`text-xs px-1 py-0.5 rounded whitespace-nowrap ${certStatus.color}`}>
                                                         {certStatus.text}
                                                     </span>
                                                 </div>
 
-                                                <div className="space-y-0.5 text-xs">
-                                                    <div className={`flex items-center gap-1 ${cert.ojt1 ? 'text-emerald-500' : 'text-gray-500'}`}>
-                                                        <span>✓ OJT ראשון:</span>
-                                                        {cert.ojt1 ? (
-                                                            <div className="flex items-center gap-1 text-xs">
-                                                                <span>{cert.ojt1.mentor}</span>
-                                                                <span className="text-gray-500">
-                                                                    <span>{formatDate(cert.ojt1.date)}</span>
-                                                                </span>
-                                                            </div>
-                                                        ) : (
-                                                            <span className="text-xs">חסר</span>
-                                                        )}
+                                                {/* שורה 2: OJT + תוקף + תעודה */}
+                                                <div className="flex items-center justify-between text-xs">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className={cert.ojt1 ? 'text-emerald-500' : 'text-gray-500'}>
+                                                            {cert.ojt1 ? '✓' : '✗'} OJT1
+                                                        </span>
+                                                        <span className={cert.ojt2 ? 'text-emerald-500' : 'text-gray-500'}>
+                                                            {cert.ojt2 ? '✓' : '✗'} OJT2
+                                                        </span>
                                                     </div>
-                                                    <div className={`flex items-center gap-1 ${cert.ojt2 ? 'text-emerald-500' : 'text-gray-500'}`}>
-                                                        <span>✓ OJT שני:</span>
-                                                        {cert.ojt2 ? (
-                                                            <div className="flex items-center gap-1 text-xs">
-                                                                <span>{cert.ojt2.mentor}</span>
-                                                                <span className="text-gray-500">
-                                                                    <span>{formatDate(cert.ojt2.date)}</span>
-                                                                </span>
-                                                            </div>
-                                                        ) : (
-                                                            <span className="text-xs">חסר</span>
-                                                        )}
-                                                    </div>
-                                                    
-                                                    <div className="flex justify-between items-center mt-1 pt-0.5 border-t border-[#334155]">
-                                                        <p className="text-xs text-gray-400">תוקף: {formatDate(cert.expiryDate)}</p>
+                                                    <div className="flex items-center gap-1">
+                                                        <span className="text-gray-400">{formatDate(cert.expiryDate)}</span>
                                                         {cert.certificate && (
                                                             <button
                                                                 onClick={() => handleShowCertificate(cert)}
-                                                                className="text-xs px-1 py-0.5 bg-[#334155] text-gray-300 
-                                                                rounded-full hover:bg-[#405171] transition-colors flex items-center gap-1"
+                                                                className="text-blue-400 hover:text-blue-300"
                                                             >
-                                                                <FileText size={10} className="text-blue-400" />
-                                                                תעודה
+                                                                📄
                                                             </button>
                                                         )}
                                                     </div>
@@ -416,7 +403,7 @@ const EmployeeCard = ({ employee, onEdit, onDelete, onCopyCertifications }: Empl
                                 {Array.from({ length: emptyCardsToAdd }).map((_, index) => (
                                     <div 
                                         key={`empty-${index}`} 
-                                        className="p-2 rounded-lg border border-[#334155] border-dashed h-[65px] mt-1.5
+                                        className="p-1.5 rounded-lg border border-[#334155] border-dashed h-[45px] mt-1
                                         bg-transparent flex items-center justify-center"
                                     >
                                         <span className="text-xs text-gray-500 italic">אין הסמכה נוספת</span>
