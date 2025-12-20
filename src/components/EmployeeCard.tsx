@@ -1,16 +1,17 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Employee, Certification } from '../models/employee';
 import ExperienceBar from './ExperienceBar';
-import { Users, FileText, ChevronRight, ChevronLeft, ClipboardCopy } from 'lucide-react';
+import { Users, FileText, ChevronRight, ChevronLeft, ClipboardCopy, GripVertical } from 'lucide-react';
 
 interface EmployeeCardProps {
     employee: Employee;
     onEdit: (employee: Employee) => void;
     onDelete: (id: string | undefined) => void;
     onCopyCertifications?: (employee: Employee) => void; // פרופ חדש להעתקת הסמכות
+    dragHandleProps?: any; // Props לגרירה
 }
 
-const EmployeeCard = ({ employee, onEdit, onDelete, onCopyCertifications }: EmployeeCardProps) => {
+const EmployeeCard = ({ employee, onEdit, onDelete, onCopyCertifications, dragHandleProps }: EmployeeCardProps) => {
     const [selectedCertificate, setSelectedCertificate] = useState<string | null>(null);
     const [selectedCertName, setSelectedCertName] = useState<string>('');
     const [certPage, setCertPage] = useState(0);
@@ -162,9 +163,18 @@ const EmployeeCard = ({ employee, onEdit, onDelete, onCopyCertifications }: Empl
     const emptyCardsToAdd = certsPerPage - visibleCertifications.length;
 
     return (
-        <div className="bg-[#1E293B] rounded-xl shadow-lg p-3 border border-[#334155]">
+        <div className="bg-[#1E293B] rounded-xl shadow-lg p-3 border border-[#334155] hover:border-blue-500/30 transition-all">
             {/* Header Section */}
             <div className="flex flex-col items-center mb-3 relative">
+                {/* Drag Handle Icon - Left Side */}
+                <div 
+                    {...dragHandleProps}
+                    className="absolute top-0 left-0 text-gray-600 hover:text-blue-400 transition-colors cursor-grab active:cursor-grabbing p-1"
+                    title="גרור לשינוי סדר"
+                >
+                    <GripVertical size={16} />
+                </div>
+                
                 {/* Action Buttons */}
                 <div className="absolute top-0 right-0 flex gap-1">
                     <button

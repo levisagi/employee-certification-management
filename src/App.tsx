@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { CSSTransition, TransitionGroup } from 'react-transition-group';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { Users, LayoutDashboard, FileText, UserPlus, LogOut, Settings as SettingsIcon, ClipboardCopy } from 'lucide-react';
-import EmployeeCard from './components/EmployeeCard';
+import SortableEmployeeCard from './components/SortableEmployeeCard';
 import EmployeeForm from './components/EmployeeForm';
 import Dashboard from './components/Dashboard';
 import Reports from './components/Reports';
@@ -20,7 +21,6 @@ function App() {
     const [error, setError] = useState<string | null>(null);
     const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
     const [currentView, setCurrentView] = useState<'employees' | 'dashboard' | 'reports'>('employees');
-    const [currentPage, setCurrentPage] = useState(0);
     const [selectedDepartment, setSelectedDepartment] = useState<string>('ניווט');
     const [isUserAuthenticated, setIsAuthenticated] = useState<boolean>(false);
     const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -40,8 +40,6 @@ function App() {
     
     // רפרנס לאזור התצוגה של העובדים
     const employeesSectionRef = useRef<HTMLDivElement>(null);
-    
-    const employeesPerPage = 3;
 
     // קבלת רשימת המחלקות הייחודיות
     const departments = ['הכל', ...Array.from(new Set(employees.map(emp => emp.department)))];
@@ -154,6 +152,36 @@ function App() {
         }
     };
 
+    // Sensors לגרירה
+    const sensors = useSensors(
+        useSensor(PointerSensor),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    );
+
+    // פונקציה לטיפול בגרירה ושחרור של עובדים
+    const handleDragEnd = (event: DragEndEvent) => {
+        const { active, over } = event;
+
+        if (!over || active.id === over.id) {
+            return;
+        }
+
+        const oldIndex = filteredEmployees.findIndex(emp => emp._id === active.id);
+        const newIndex = filteredEmployees.findIndex(emp => emp._id === over.id);
+
+        if (oldIndex !== -1 && newIndex !== -1) {
+            const reorderedFiltered = arrayMove(filteredEmployees, oldIndex, newIndex);
+            
+            // עדכון המערך המלא של העובדים
+            const filteredIds = new Set(reorderedFiltered.map(emp => emp._id));
+            const nonFilteredEmployees = employees.filter(emp => !filteredIds.has(emp._id));
+            
+            setEmployees([...reorderedFiltered, ...nonFilteredEmployees]);
+        }
+    };
+
     // סינון העובדים לפי מחלקה וחיפוש
     const filteredEmployees = employees
         // סינון לפי מחלקה
@@ -170,38 +198,6 @@ function App() {
                 emp.department.toLowerCase().includes(query)
             );
         });
-        
-    // גלילה חלקה למיקום העמוד בעת מעבר
-    const ensureVisibleEmployeesSection = () => {
-        if (employeesSectionRef.current) {
-            const rect = employeesSectionRef.current.getBoundingClientRect();
-            // בדוק אם החלק העליון של אזור העובדים מחוץ לתצוגה
-            if (rect.top < 0) {
-                employeesSectionRef.current.scrollIntoView({ 
-                    behavior: 'smooth', 
-                    block: 'start'
-                });
-            }
-        }
-    };
-
-    const nextPage = () => {
-        if ((currentPage + 1) * employeesPerPage < filteredEmployees.length) {
-            // מעבר עם אנימציה חלקה
-            setCurrentPage(prev => prev + 1);
-            // ודא שאזור העובדים נראה
-            setTimeout(ensureVisibleEmployeesSection, 100);
-        }
-    };
-
-    const prevPage = () => {
-        if (currentPage > 0) {
-            // מעבר עם אנימציה חלקה
-            setCurrentPage(prev => prev - 1);
-            // ודא שאזור העובדים נראה
-            setTimeout(ensureVisibleEmployeesSection, 100);
-        }
-    };
 
     if (!isUserAuthenticated) {
         return <Login onLogin={handleLogin} error={loginError || undefined} />;
@@ -312,60 +308,26 @@ function App() {
                             </button>
                         </div>
                         
-                        {/* כפתורי ניווט בין עובדים - במרכז אמיתי */}
+                        {/* שדה חיפוש - במרכז */}
                         <div className="flex-1 flex justify-center w-1/3">
                             {currentView === 'employees' && (
-                                <div className="flex items-center gap-2">
-                                    {/* שדה חיפוש */}
-                                    <div className="relative">
-                                        <input
-                                            type="text"
-                                            value={searchQuery}
-                                            onChange={(e) => {
-                                                setSearchQuery(e.target.value);
-                                                setCurrentPage(0); // חזרה לעמוד הראשון בעת חיפוש
-                                            }}
-                                            placeholder="חיפוש עובד..."
-                                            className="text-xs px-3 py-1 rounded-lg border-0 bg-[#172A46] text-white placeholder-gray-400 focus:ring-2 focus:ring-white/20 w-40"
-                                        />
-                                        {searchQuery && (
-                                            <button
-                                                onClick={() => setSearchQuery('')}
-                                                className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
-                                            >
-                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                                </svg>
-                                            </button>
-                                        )}
-                                    </div>
-                                    
-                                    {filteredEmployees.length > 0 && (
-                                        <>
-                                            <button 
-                                                onClick={prevPage} 
-                                                disabled={currentPage === 0}
-                                                className="flex items-center justify-center w-5 h-5 rounded-full bg-[#172A46] text-white disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[#1F3A67] transition-colors"
-                                                aria-label="העמוד הקודם"
-                                            >
-                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
-                                                </svg>
-                                            </button>
-                                            <div className="text-xs text-white">
-                                                {currentPage + 1} / {Math.ceil(filteredEmployees.length / employeesPerPage)}
-                                            </div>
-                                            <button 
-                                                onClick={nextPage} 
-                                                disabled={(currentPage + 1) * employeesPerPage >= filteredEmployees.length}
-                                                className="flex items-center justify-center w-5 h-5 rounded-full bg-[#172A46] text-white disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[#1F3A67] transition-colors"
-                                                aria-label="העמוד הבא"
-                                            >
-                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
-                                                </svg>
-                                            </button>
-                                        </>
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        placeholder="חיפוש עובד..."
+                                        className="text-xs px-3 py-1 rounded-lg border-0 bg-[#172A46] text-white placeholder-gray-400 focus:ring-2 focus:ring-white/20 w-40"
+                                    />
+                                    {searchQuery && (
+                                        <button
+                                            onClick={() => setSearchQuery('')}
+                                            className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
                                     )}
                                 </div>
                             )}
@@ -377,10 +339,7 @@ function App() {
                                 <>
                                     <select
                                         value={selectedDepartment}
-                                        onChange={(e) => {
-                                            setSelectedDepartment(e.target.value);
-                                            setCurrentPage(0);
-                                        }}
+                                        onChange={(e) => setSelectedDepartment(e.target.value)}
                                         className="text-gray-800 text-xs px-2 py-1 rounded-lg border-0 focus:ring-2 focus:ring-white/20 bg-white/90"
                                     >
                                         {departments.map((dept, index) => (
@@ -411,32 +370,42 @@ function App() {
             <div className="container mx-auto px-4 pb-4 pt-4 overflow-visible">
                 {currentView === 'employees' && (
                     <div id="employees-section" ref={employeesSectionRef} className="relative overflow-visible">
-                        {/* שינוי כאן: הסרת כפתורי החיצים מכאן */}
-                        <div className="flex items-center relative page-container overflow-visible">
-                            <div className="transition-container min-h-[600px] w-full">
-                                <TransitionGroup className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    {filteredEmployees
-                                        .slice(currentPage * employeesPerPage, (currentPage + 1) * employeesPerPage)
-                                        .map(employee => (
-                                            <CSSTransition
-                                                key={employee._id}
-                                                timeout={300}
-                                                classNames="page-transition"
-                                            >
-                                                <EmployeeCard 
-                                                    employee={employee}
-                                                    onEdit={(emp) => {
-                                                        setEditingEmployee(emp);
-                                                        setShowForm(true);
-                                                    }}
-                                                    onDelete={handleDeleteEmployee}
-                                                    onCopyCertifications={handleCopyCertifications}
-                                                />
-                                            </CSSTransition>
-                                        ))}
-                                </TransitionGroup>
+                        {/* הודעה על אפשרות גרירה */}
+                        {searchQuery === '' && selectedDepartment === 'הכל' && (
+                            <div className="mb-3 text-center text-xs text-gray-400">
+                                💡 ניתן לגרור ולשחרר כרטיסי עובדים כדי לשנות את הסדר
                             </div>
-                        </div>
+                        )}
+                        
+                        {/* תצוגת כל העובדים עם אפשרות גרירה */}
+                        <DndContext 
+                            sensors={sensors}
+                            collisionDetection={closestCenter}
+                            onDragEnd={handleDragEnd}
+                        >
+                            <SortableContext 
+                                items={filteredEmployees.map(emp => emp._id || '')}
+                                strategy={verticalListSortingStrategy}
+                            >
+                                <div 
+                                    className="flex flex-wrap gap-4"
+                                    style={{ direction: 'rtl' }}
+                                >
+                                    {filteredEmployees.map((employee) => (
+                                        <SortableEmployeeCard
+                                            key={employee._id}
+                                            employee={employee}
+                                            onEdit={(emp) => {
+                                                setEditingEmployee(emp);
+                                                setShowForm(true);
+                                            }}
+                                            onDelete={handleDeleteEmployee}
+                                            onCopyCertifications={handleCopyCertifications}
+                                        />
+                                    ))}
+                                </div>
+                            </SortableContext>
+                        </DndContext>
                     </div>
                 )}
                 
