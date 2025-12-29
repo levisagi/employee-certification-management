@@ -55,16 +55,13 @@ const EmployeeCard = ({ employee, onEdit, onDelete, onCopyCertifications, dragHa
 
     const calculateTotalQualification = useMemo(() => {
         // חישוב ציון ההסמכות (40%)
-        const REQUIRED_CERTIFICATIONS = 7;
-        const PROGRESS_PER_CERTIFICATION = Math.round(100 / REQUIRED_CERTIFICATIONS);
+        const TOTAL_REQUIRED_CERTIFICATIONS = 7; // כל עובד חייב לעבור 7 הסמכות חובה
         
-        const validRequiredCerts = employee.certifications.filter(cert => {
-            const isValid = new Date(cert.expiryDate) > new Date();
-            const hasOJT = cert.ojt1 && cert.ojt2;
-            return cert.isRequired && isValid && hasOJT;
-        }).length;
+        // ספירת הסמכות שמסומנות "חובה" (לא משנה תוקף או OJT)
+        const requiredCertsCount = employee.certifications.filter(cert => cert.isRequired).length;
 
-        const certScore = Math.min((validRequiredCerts * PROGRESS_PER_CERTIFICATION), 100) * 0.4;
+        const certPercentage = (requiredCertsCount / TOTAL_REQUIRED_CERTIFICATIONS) * 100;
+        const certScore = certPercentage * 0.4;
 
         // חישוב ציון הוותק (60%)
         const experienceYears = Math.min(
@@ -280,14 +277,15 @@ const EmployeeCard = ({ employee, onEdit, onDelete, onCopyCertifications, dragHa
                 <div className="w-full mt-2 space-y-1.5">
                     {/* פס התקדמות הסמכות */}
                     {(() => {
-                        // חישוב אחוז ההסמכות התקפות
-                        const validRequiredCerts = employee.certifications.filter(cert => {
-                            const isValid = new Date(cert.expiryDate) > new Date();
-                            const hasOJT = cert.ojt1 && cert.ojt2;
-                            return cert.isRequired && isValid && hasOJT;
-                        }).length;
+                        const TOTAL_REQUIRED_CERTIFICATIONS = 7; // כל עובד חייב לעבור 7 הסמכות חובה
                         
-                        const certificationPercentage = Math.min(Math.round(validRequiredCerts / 7 * 100), 100);
+                        // חישוב כמה הסמכות מסומנות "חובה" (לא משנה תוקף או OJT)
+                        const requiredCertsCount = employee.certifications.filter(cert => cert.isRequired).length;
+                        
+                        const certificationPercentage = Math.min(
+                            Math.round((requiredCertsCount / TOTAL_REQUIRED_CERTIFICATIONS) * 100), 
+                            100
+                        );
                         
                         return (
                             <div>
@@ -298,7 +296,7 @@ const EmployeeCard = ({ employee, onEdit, onDelete, onCopyCertifications, dragHa
                                             {certificationPercentage}% 
                                         </span>
                                         <span className="text-xs text-gray-500">
-                                            ({validRequiredCerts}/7)
+                                            ({requiredCertsCount}/{TOTAL_REQUIRED_CERTIFICATIONS})
                                         </span>
                                     </div>
                                 </div>
@@ -362,7 +360,7 @@ const EmployeeCard = ({ employee, onEdit, onDelete, onCopyCertifications, dragHa
                             opacity: 1
                         }}
                     >
-                        {visibleCertifications.length > 0 ? (
+                        {employee.certifications.length > 0 ? (
                             <>
                                 {/* הצגת ההסמכות הנראות */}
                                 {visibleCertifications.map((cert, index) => {
@@ -370,7 +368,7 @@ const EmployeeCard = ({ employee, onEdit, onDelete, onCopyCertifications, dragHa
                                     return (
                                         <div 
                                             key={index} 
-                                            className={`p-1.5 rounded-lg border bg-[#1E293B] hover:border-blue-500/20 transition-colors min-h-[45px]
+                                            className={`p-1.5 rounded-lg border bg-[#1E293B] hover:border-blue-500/20 transition-colors h-[45px]
                                                 ${cert.isRequired ? 'border-blue-500/20 bg-blue-500/5' : 'border-[#334155]'}`}
                                         >
                                             <div className="flex flex-col justify-center h-full py-1">
@@ -413,7 +411,7 @@ const EmployeeCard = ({ employee, onEdit, onDelete, onCopyCertifications, dragHa
                                 {Array.from({ length: emptyCardsToAdd }).map((_, index) => (
                                     <div 
                                         key={`empty-${index}`} 
-                                        className="p-1.5 rounded-lg border border-[#334155] border-dashed h-[45px] mt-1
+                                        className="p-1.5 rounded-lg border border-[#334155] border-dashed h-[45px]
                                         bg-transparent flex items-center justify-center"
                                     >
                                         <span className="text-xs text-gray-500 italic">אין הסמכה נוספת</span>
@@ -421,9 +419,18 @@ const EmployeeCard = ({ employee, onEdit, onDelete, onCopyCertifications, dragHa
                                 ))}
                             </>
                         ) : (
-                            <div className="text-center py-4">
-                                <p className="text-gray-500 text-sm">אין הסמכות להצגה</p>
-                            </div>
+                            /* אם אין הסמכות כלל - הצג 3 כרטיסים ריקים */
+                            <>
+                                {Array.from({ length: certsPerPage }).map((_, index) => (
+                                    <div 
+                                        key={`no-cert-${index}`} 
+                                        className="p-1.5 rounded-lg border border-[#334155] border-dashed h-[45px]
+                                        bg-transparent flex items-center justify-center"
+                                    >
+                                        <span className="text-xs text-gray-500 italic">אין הסמכה מעודכנת</span>
+                                    </div>
+                                ))}
+                            </>
                         )}
                     </div>
 

@@ -132,6 +132,10 @@ export const copyCertifications = async (
             // הסרת המזהה המקורי כדי שיווצר מזהה חדש בשרת
             delete certCopy._id;
             
+            // הסרת קובץ התעודה - לא מעתיקים את הקובץ
+            delete certCopy.certificate;
+            delete certCopy.certificateFileName;
+            
             // עיבוד תאריכים לפורמט נכון
             if (certCopy.startDate) {
                 certCopy.startDate = new Date(certCopy.startDate);

@@ -280,6 +280,19 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', message: 'Server is running', timestamp: new Date() });
 });
 
+// עדכון סדר תצוגה של עובדים
+app.put('/api/employees/reorder', async (req, res) => {
+    try {
+        const { employeeOrders } = req.body;
+        // employeeOrders הוא מערך של { id, displayOrder }
+        await EmployeeModel.updateDisplayOrder(employeeOrders);
+        res.json({ message: 'Display order updated successfully' });
+    } catch (error) {
+        console.error('Error updating display order:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
 // Error Handling Middleware
 app.use((err, req, res, next) => {
     console.error('Unhandled error:', err);

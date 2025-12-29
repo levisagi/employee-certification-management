@@ -173,3 +173,5 @@
 - ודא שאין רווחים מיותרים ב-Connection String
 - נסה להריץ `npm install pg` שוב
 
+
+

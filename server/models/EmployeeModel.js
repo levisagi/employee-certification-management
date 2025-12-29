@@ -17,6 +17,7 @@ class EmployeeModel {
                 e.department,
                 e.start_date,
                 e.profile_image,
+                e.display_order,
                 e.created_at,
                 e.updated_at,
                 COALESCE(
@@ -51,7 +52,7 @@ class EmployeeModel {
             FROM employees e
             LEFT JOIN certifications c ON e.id = c.employee_id
             GROUP BY e.id
-            ORDER BY e.created_at DESC
+            ORDER BY e.display_order ASC, e.created_at DESC
         `;
         
         const result = await db.query(query);
@@ -74,6 +75,7 @@ class EmployeeModel {
                 e.department,
                 e.start_date,
                 e.profile_image,
+                e.display_order,
                 e.created_at,
                 e.updated_at,
                 COALESCE(
@@ -305,10 +307,36 @@ class EmployeeModel {
             department: row.department,
             startDate: row.start_date,
             profileImage: row.profile_image,
+            displayOrder: row.display_order,
             certifications: row.certifications || [],
             createdAt: row.created_at,
             updatedAt: row.updated_at
         };
+    }
+
+    /**
+     * עדכון סדר תצוגה של עובדים
+     */
+    static async updateDisplayOrder(employeeOrders) {
+        const client = await db.pool.connect();
+        try {
+            await client.query('BEGIN');
+            
+            for (const { id, displayOrder } of employeeOrders) {
+                await client.query(
+                    'UPDATE employees SET display_order = $1 WHERE id = $2',
+                    [displayOrder, id]
+                );
+            }
+            
+            await client.query('COMMIT');
+            return true;
+        } catch (error) {
+            await client.query('ROLLBACK');
+            throw error;
+        } finally {
+            client.release();
+        }
     }
 }
 

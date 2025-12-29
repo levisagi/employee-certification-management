@@ -206,16 +206,13 @@ const Reports: React.FC<ReportsProps> = ({ employees }) => {
 
     const calculateEmployeeQualification = (employee: Employee) => {
         // חישוב ציון ההסמכות (40%)
-        const REQUIRED_CERTIFICATIONS = 7;
-        const PROGRESS_PER_CERTIFICATION = Math.round(100 / REQUIRED_CERTIFICATIONS);
+        const TOTAL_REQUIRED_CERTIFICATIONS = 7; // כל עובד חייב לעבור 7 הסמכות חובה
         
-        const validRequiredCerts = employee.certifications.filter(cert => {
-            const isValid = new Date(cert.expiryDate) > new Date();
-            const hasOJT = cert.ojt1 && cert.ojt2;
-            return cert.isRequired && isValid && hasOJT;
-        }).length;
+        // ספירת הסמכות שמסומנות "חובה" (לא משנה תוקף או OJT)
+        const requiredCertsCount = employee.certifications.filter(cert => cert.isRequired).length;
 
-        const certScore = Math.min((validRequiredCerts * PROGRESS_PER_CERTIFICATION), 100) * 0.4;
+        const certPercentage = (requiredCertsCount / TOTAL_REQUIRED_CERTIFICATIONS) * 100;
+        const certScore = certPercentage * 0.4;
 
         // חישוב ציון הוותק (60%)
         const experienceYears = Math.min(

@@ -28,10 +28,23 @@ const CertificationForm: React.FC<CertificationFormProps> = ({
     };
 
     const handleBasicChange = (field: keyof Certification, value: any) => {
-        onChange({
-            ...certification,
-            [field]: value
-        });
+        // אם משנים את תאריך התחילה, עדכן אוטומטית את תאריך התפוגה ל-5 שנים קדימה
+        if (field === 'startDate' && value) {
+            const startDate = new Date(value);
+            const expiryDate = new Date(startDate);
+            expiryDate.setFullYear(expiryDate.getFullYear() + 5);
+            
+            onChange({
+                ...certification,
+                startDate: startDate,
+                expiryDate: expiryDate
+            });
+        } else {
+            onChange({
+                ...certification,
+                [field]: value
+            });
+        }
     };
 
     const resetOJT = (type: 'ojt1' | 'ojt2') => {

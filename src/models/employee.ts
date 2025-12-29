@@ -28,6 +28,7 @@ export interface Employee {
     role: string;
     department: string;
     startDate: Date;
+    displayOrder?: number;
     certifications: Certification[];
     profileImage?: string;
 }

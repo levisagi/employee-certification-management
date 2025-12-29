@@ -110,3 +110,5 @@ GROUP BY e.id;
 -- 2. אפשר גם להריץ אותו מהקוד באמצעות migration script
 -- 3. ה-View employees_with_certifications מאפשר לקבל עובדים עם כל ההסמכות בשאילתה אחת
 
+
+

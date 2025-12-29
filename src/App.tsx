@@ -161,7 +161,7 @@ function App() {
     );
 
     // פונקציה לטיפול בגרירה ושחרור של עובדים
-    const handleDragEnd = (event: DragEndEvent) => {
+    const handleDragEnd = async (event: DragEndEvent) => {
         const { active, over } = event;
 
         if (!over || active.id === over.id) {
@@ -178,7 +178,26 @@ function App() {
             const filteredIds = new Set(reorderedFiltered.map(emp => emp._id));
             const nonFilteredEmployees = employees.filter(emp => !filteredIds.has(emp._id));
             
-            setEmployees([...reorderedFiltered, ...nonFilteredEmployees]);
+            const newEmployeesOrder = [...reorderedFiltered, ...nonFilteredEmployees];
+            setEmployees(newEmployeesOrder);
+
+            // שמירת הסדר החדש במסד הנתונים
+            try {
+                const employeeOrders = newEmployeesOrder.map((emp, index) => ({
+                    id: emp._id,
+                    displayOrder: index
+                }));
+
+                await fetch('http://localhost:5001/api/employees/reorder', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ employeeOrders }),
+                });
+            } catch (error) {
+                console.error('Error saving display order:', error);
+            }
         }
     };
 
