@@ -1,6 +1,8 @@
 import { Equipment } from '../models/equipment';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
+const API_URL = process.env.NODE_ENV === 'production' 
+    ? '/api'  // In production, API is on the same server
+    : 'http://localhost:5001/api';  // In development, API is on port 5001
 
 // טיפול בשגיאות
 const handleResponse = async (response: Response) => {

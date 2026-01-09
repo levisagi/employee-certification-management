@@ -1,6 +1,8 @@
 import { Employee, Certification } from '../models/employee';
 
-const API_URL = 'http://localhost:5001/api';
+const API_URL = process.env.NODE_ENV === 'production' 
+    ? '/api'  // In production, API is on the same server
+    : 'http://localhost:5001/api';  // In development, API is on port 5001
 
 export const fetchEmployees = async (): Promise<Employee[]> => {
     const response = await fetch(`${API_URL}/employees`);
