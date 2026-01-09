@@ -12,6 +12,7 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 // PostgreSQL connection
 const db = require('./database');
 const EmployeeModel = require('./models/EmployeeModel');
+const EquipmentModel = require('./models/EquipmentModel');
 
 // בדיקת חיבור למסד הנתונים
 db.query('SELECT NOW()')
@@ -289,6 +290,106 @@ app.put('/api/employees/reorder', async (req, res) => {
         res.json({ message: 'Display order updated successfully' });
     } catch (error) {
         console.error('Error updating display order:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// ============================================
+// Equipment Routes (ציוד)
+// ============================================
+
+// קבלת כל הציוד
+app.get('/api/equipment', async (req, res) => {
+    try {
+        const equipment = await EquipmentModel.getAll();
+        console.log(`Fetched ${equipment.length} equipment items`);
+        res.json(equipment);
+    } catch (error) {
+        console.error('Error fetching equipment:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// קבלת ציוד בודד לפי מזהה
+app.get('/api/equipment/:id', async (req, res) => {
+    try {
+        const equipment = await EquipmentModel.getById(req.params.id);
+        if (!equipment) {
+            return res.status(404).json({ message: 'Equipment not found' });
+        }
+        res.json(equipment);
+    } catch (error) {
+        console.error('Error fetching equipment:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// הוספת ציוד חדש
+app.post('/api/equipment', async (req, res) => {
+    try {
+        const newEquipment = await EquipmentModel.create(req.body);
+        console.log('Created new equipment:', newEquipment.name);
+        res.status(201).json(newEquipment);
+    } catch (error) {
+        console.error('Error creating equipment:', error);
+        if (error.code === '23505') { // Unique constraint violation
+            res.status(409).json({ message: 'Equipment with this serial number already exists' });
+        } else {
+            res.status(500).json({ message: error.message });
+        }
+    }
+});
+
+// עדכון ציוד
+app.put('/api/equipment/:id', async (req, res) => {
+    try {
+        const updatedEquipment = await EquipmentModel.update(req.params.id, req.body);
+        if (!updatedEquipment) {
+            return res.status(404).json({ message: 'Equipment not found' });
+        }
+        console.log('Updated equipment:', updatedEquipment.name);
+        res.json(updatedEquipment);
+    } catch (error) {
+        console.error('Error updating equipment:', error);
+        if (error.code === '23505') { // Unique constraint violation
+            res.status(409).json({ message: 'Equipment with this serial number already exists' });
+        } else {
+            res.status(500).json({ message: error.message });
+        }
+    }
+});
+
+// מחיקת ציוד
+app.delete('/api/equipment/:id', async (req, res) => {
+    try {
+        await EquipmentModel.delete(req.params.id);
+        console.log('Deleted equipment with ID:', req.params.id);
+        res.json({ message: 'Equipment deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting equipment:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// חיפוש ציוד
+app.get('/api/equipment/search/:query', async (req, res) => {
+    try {
+        const results = await EquipmentModel.search(req.params.query);
+        res.json(results);
+    } catch (error) {
+        console.error('Error searching equipment:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// עדכון סדר תצוגה של ציוד
+app.post('/api/equipment/display-order', async (req, res) => {
+    try {
+        const { equipmentIds } = req.body;
+        await EquipmentModel.updateDisplayOrder(equipmentIds);
+        res.json({ message: 'Display order updated successfully' });
+    } catch (error) {
+        console.error('Error updating equipment display order:', error);
         res.status(500).json({ message: error.message });
     }
 });

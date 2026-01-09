@@ -1,0 +1,6 @@
+ALTER TABLE equipment 
+DROP COLUMN IF EXISTS image;
+
+ALTER TABLE equipment 
+ADD COLUMN IF NOT EXISTS certificate TEXT;
+

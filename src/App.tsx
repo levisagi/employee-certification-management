@@ -9,12 +9,15 @@ import Reports from './components/Reports';
 import Login from './components/Login';
 import Settings from './components/Settings';
 import CertificationCopyModal from './components/CertificationCopyModal';
+import LandingPage from './components/LandingPage';
+import EquipmentManager from './components/EquipmentManager';
 import { Employee, Certification } from './models/employee';
 import { fetchEmployees, createEmployee, updateEmployee, deleteEmployee, copyCertifications } from './services/api';
 import { login, logout, isAuthenticated, getCurrentUser, User } from './services/auth';
 import './index.css';
 
 function App() {
+    const [currentPage, setCurrentPage] = useState<'landing' | 'training' | 'hr'>('landing');
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [showForm, setShowForm] = useState(false);
     const [loading, setLoading] = useState(true);
@@ -218,6 +221,22 @@ function App() {
             );
         });
 
+    // Landing Page
+    if (currentPage === 'landing') {
+        return (
+            <LandingPage
+                onNavigateToTraining={() => setCurrentPage('training')}
+                onNavigateToHR={() => setCurrentPage('hr')}
+            />
+        );
+    }
+
+    // Equipment Management System
+    if (currentPage === 'hr') {
+        return <EquipmentManager onBackToHome={() => setCurrentPage('landing')} />;
+    }
+
+    // Training System
     if (!isUserAuthenticated) {
         return <Login onLogin={handleLogin} error={loginError || undefined} />;
     }
@@ -269,6 +288,13 @@ function App() {
                                 {currentUser?.fullName || currentUser?.username}
                             </div>
                             <button
+                                onClick={() => setCurrentPage('landing')}
+                                className="flex items-center gap-0.5 bg-[#172A46] text-gray-300 px-2 py-1 rounded-lg 
+                                         hover:bg-[#1F3A67] transition-colors text-xs"
+                            >
+                                <span>חזרה לתפריט</span>
+                            </button>
+                            <button
                                 onClick={() => setShowSettings(true)}
                                 className="flex items-center gap-0.5 bg-[#172A46] text-gray-300 px-2 py-1 rounded-lg 
                                          hover:bg-[#1F3A67] transition-colors text-xs"
@@ -278,7 +304,10 @@ function App() {
                             </button>
                             
                             <button
-                                onClick={handleLogout}
+                                onClick={() => {
+                                    handleLogout();
+                                    setCurrentPage('landing');
+                                }}
                                 className="flex items-center gap-0.5 bg-[#172A46] text-gray-300 px-2 py-1 rounded-lg 
                                          hover:bg-[#1F3A67] transition-colors text-xs"
                             >
