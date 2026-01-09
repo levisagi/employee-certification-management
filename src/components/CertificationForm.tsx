@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Certification, OJT } from '../models/employee';
 import { FileText, Upload, X, Check } from 'lucide-react';
+import { compressImage, isImageFile } from '../utils/imageCompression';
 
 interface CertificationFormProps {
     certification: Certification;
@@ -66,7 +67,7 @@ const CertificationForm: React.FC<CertificationFormProps> = ({
         }
     };
 
-    const handleCertificateUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleCertificateUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
             if (file.size > 5000000) {
@@ -74,16 +75,37 @@ const CertificationForm: React.FC<CertificationFormProps> = ({
                 return;
             }
 
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                const base64String = reader.result as string;
+            try {
+                let base64String: string;
+
+                // אם זה תמונה - דחוס אותה
+                if (isImageFile(file)) {
+                    console.log(`מדחיס תעודה (תמונה): ${(file.size / 1024).toFixed(2)}KB`);
+                    base64String = await compressImage(file, {
+                        maxWidth: 1600,
+                        maxHeight: 1600,
+                        quality: 0.85,
+                        maxSizeMB: 0.5
+                    });
+                } else {
+                    // PDF - לא דוחסים
+                    const reader = new FileReader();
+                    base64String = await new Promise((resolve, reject) => {
+                        reader.onloadend = () => resolve(reader.result as string);
+                        reader.onerror = reject;
+                        reader.readAsDataURL(file);
+                    });
+                }
+
                 onChange({
                     ...certification,
                     certificate: base64String,
                     certificateFileName: file.name
                 });
-            };
-            reader.readAsDataURL(file);
+            } catch (error) {
+                console.error('Error processing certificate:', error);
+                setErrors({ certificate: 'שגיאה בעיבוד הקובץ' });
+            }
         }
     };
 

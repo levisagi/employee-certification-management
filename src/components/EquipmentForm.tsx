@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Upload, X, FileText } from 'lucide-react';
 import { Equipment } from '../models/equipment';
+import { compressImage, isImageFile } from '../utils/imageCompression';
 
 interface EquipmentFormProps {
     onSubmit: (equipment: Equipment) => void;
@@ -46,7 +47,7 @@ const EquipmentForm: React.FC<EquipmentFormProps> = ({ onSubmit, initialData, on
         }));
     };
 
-    const handleCertificateUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleCertificateUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
             // בדיקת גודל הקובץ (מקסימום 10MB)
@@ -62,14 +63,36 @@ const EquipmentForm: React.FC<EquipmentFormProps> = ({ onSubmit, initialData, on
                 return;
             }
 
-            const reader = new FileReader();
-            reader.onloadend = () => {
+            try {
+                let base64String: string;
+
+                // אם זה תמונה - דחוס אותה
+                if (isImageFile(file)) {
+                    console.log(`מדחיס תעודת צב״ד (תמונה): ${(file.size / 1024).toFixed(2)}KB`);
+                    base64String = await compressImage(file, {
+                        maxWidth: 1600,
+                        maxHeight: 1600,
+                        quality: 0.85,
+                        maxSizeMB: 0.5
+                    });
+                } else {
+                    // PDF - לא דוחסים
+                    const reader = new FileReader();
+                    base64String = await new Promise((resolve, reject) => {
+                        reader.onloadend = () => resolve(reader.result as string);
+                        reader.onerror = reject;
+                        reader.readAsDataURL(file);
+                    });
+                }
+
                 setFormData(prev => ({
                     ...prev,
-                    certificate: reader.result as string
+                    certificate: base64String
                 }));
-            };
-            reader.readAsDataURL(file);
+            } catch (error) {
+                console.error('Error processing certificate:', error);
+                alert('שגיאה בעיבוד הקובץ');
+            }
         }
     };
 

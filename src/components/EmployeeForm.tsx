@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Employee, Certification } from '../models/employee';
 import CertificationForm from './CertificationForm';
 import ImageCropper from './ImageCropper';
+import { compressImage } from '../utils/imageCompression';
 
 interface EmployeeFormProps {
     onSubmit: (employee: Employee) => void;
@@ -70,7 +71,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSubmit, initialData, onCa
         }
     }, [initialData]);
 
-    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
             if (file.size > 5000000) {
@@ -78,12 +79,20 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSubmit, initialData, onCa
                 return;
             }
 
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                const imageDataUrl = reader.result as string;
-                setImageToEdit(imageDataUrl);
-            };
-            reader.readAsDataURL(file);
+            try {
+                // דחיסת התמונה אוטומטית
+                console.log(`מדחיס תמונה: ${(file.size / 1024).toFixed(2)}KB`);
+                const compressedImage = await compressImage(file, {
+                    maxWidth: 800,
+                    maxHeight: 800,
+                    quality: 0.8,
+                    maxSizeMB: 0.3
+                });
+                setImageToEdit(compressedImage);
+            } catch (error) {
+                console.error('Error compressing image:', error);
+                setErrors({ profileImage: 'שגיאה בדחיסת התמונה' });
+            }
         }
     };
 
