@@ -344,10 +344,58 @@ ${itemsList}
                             </button>
                         )}
                         
-                        {/* כותרת */}
-                        <div className="flex-1 text-center">
-                            <h1 className="text-3xl font-bold">מערכת ניהול צב״דים</h1>
-                            <p className="text-gray-300 mt-1">ניהול וכיול ציוד</p>
+                        {/* כותרת עם לוגו */}
+                        <div className="flex-1 flex items-center justify-center gap-4">
+                            {/* לוגו ציוד מדידה */}
+                            <svg 
+                                width="60" 
+                                height="60" 
+                                viewBox="0 0 100 100" 
+                                className="flex-shrink-0"
+                            >
+                                {/* מסגרת ספקטרום אנלייזר */}
+                                <rect x="10" y="20" width="80" height="60" rx="4" fill="#1E293B" stroke="#3B82F6" strokeWidth="2"/>
+                                
+                                {/* מסך */}
+                                <rect x="15" y="25" width="70" height="40" fill="#0A192F" stroke="#60A5FA" strokeWidth="1"/>
+                                
+                                {/* גרף ספקטרום */}
+                                <path 
+                                    d="M 20 55 L 30 50 L 40 35 L 50 30 L 60 40 L 70 45 L 80 50" 
+                                    stroke="#10B981" 
+                                    strokeWidth="2" 
+                                    fill="none"
+                                    strokeLinecap="round"
+                                />
+                                <path 
+                                    d="M 20 55 L 30 50 L 40 35 L 50 30 L 60 40 L 70 45 L 80 50 L 80 65 L 20 65 Z" 
+                                    fill="url(#gradient)" 
+                                    opacity="0.3"
+                                />
+                                
+                                {/* כפתורים */}
+                                <circle cx="25" cy="73" r="3" fill="#EF4444"/>
+                                <circle cx="35" cy="73" r="3" fill="#10B981"/>
+                                <circle cx="45" cy="73" r="3" fill="#3B82F6"/>
+                                
+                                {/* מחוגים קטנים */}
+                                <rect x="60" y="69" width="8" height="8" rx="1" fill="#374151" stroke="#60A5FA" strokeWidth="0.5"/>
+                                <rect x="70" y="69" width="8" height="8" rx="1" fill="#374151" stroke="#60A5FA" strokeWidth="0.5"/>
+                                
+                                {/* גרדיאנט */}
+                                <defs>
+                                    <linearGradient id="gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                        <stop offset="0%" stopColor="#10B981" stopOpacity="0.6"/>
+                                        <stop offset="100%" stopColor="#10B981" stopOpacity="0.1"/>
+                                    </linearGradient>
+                                </defs>
+                            </svg>
+                            
+                            {/* טקסט */}
+                            <div className="text-center">
+                                <h1 className="text-3xl font-bold">מערכת ניהול צב״דים</h1>
+                                <p className="text-gray-300 mt-1">ניהול וכיול ציוד</p>
+                            </div>
                         </div>
                         
                         {/* מספר גרסה */}
