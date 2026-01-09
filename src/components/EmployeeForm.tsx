@@ -81,13 +81,22 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSubmit, initialData, onCa
 
             try {
                 // דחיסת התמונה אוטומטית
-                console.log(`מדחיס תמונה: ${(file.size / 1024).toFixed(2)}KB`);
+                const originalSizeKB = (file.size / 1024).toFixed(0);
+                console.log(`מדחיס תמונה: ${originalSizeKB}KB`);
                 const compressedImage = await compressImage(file, {
                     maxWidth: 800,
                     maxHeight: 800,
                     quality: 0.8,
                     maxSizeMB: 0.3
                 });
+                
+                // חישוב גודל אחרי דחיסה
+                const compressedSizeKB = ((compressedImage.length * 3) / 4 / 1024).toFixed(0);
+                const savings = ((1 - (parseInt(compressedSizeKB) / parseInt(originalSizeKB))) * 100).toFixed(0);
+                
+                // הצגת הודעה
+                alert(`✅ תמונת פרופיל נדחסה בהצלחה!\n\n📊 גודל מקורי: ${originalSizeKB}KB\n📉 גודל דחוס: ${compressedSizeKB}KB\n💾 חיסכון: ${savings}%`);
+                
                 setImageToEdit(compressedImage);
             } catch (error) {
                 console.error('Error compressing image:', error);

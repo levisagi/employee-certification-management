@@ -77,16 +77,24 @@ const CertificationForm: React.FC<CertificationFormProps> = ({
 
             try {
                 let base64String: string;
+                const originalSizeKB = (file.size / 1024).toFixed(0);
 
                 // אם זה תמונה - דחוס אותה
                 if (isImageFile(file)) {
-                    console.log(`מדחיס תעודה (תמונה): ${(file.size / 1024).toFixed(2)}KB`);
+                    console.log(`מדחיס תעודה (תמונה): ${originalSizeKB}KB`);
                     base64String = await compressImage(file, {
                         maxWidth: 1600,
                         maxHeight: 1600,
                         quality: 0.85,
                         maxSizeMB: 0.5
                     });
+                    
+                    // חישוב גודל אחרי דחיסה
+                    const compressedSizeKB = ((base64String.length * 3) / 4 / 1024).toFixed(0);
+                    const savings = ((1 - (parseInt(compressedSizeKB) / parseInt(originalSizeKB))) * 100).toFixed(0);
+                    
+                    // הצגת הודעה
+                    alert(`✅ תעודה נדחסה בהצלחה!\n\n📊 גודל מקורי: ${originalSizeKB}KB\n📉 גודל דחוס: ${compressedSizeKB}KB\n💾 חיסכון: ${savings}%`);
                 } else {
                     // PDF - לא דוחסים
                     const reader = new FileReader();
@@ -95,6 +103,7 @@ const CertificationForm: React.FC<CertificationFormProps> = ({
                         reader.onerror = reject;
                         reader.readAsDataURL(file);
                     });
+                    alert(`✅ קובץ PDF הועלה בהצלחה!\n\n📄 גודל: ${originalSizeKB}KB\n(PDF לא נדחס)`);
                 }
 
                 onChange({
