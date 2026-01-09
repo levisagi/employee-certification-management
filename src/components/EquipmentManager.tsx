@@ -34,6 +34,9 @@ const EquipmentManager: React.FC<EquipmentManagerProps> = ({ onBackToHome }) => 
     const [showCart, setShowCart] = useState(false);
     const [showToast, setShowToast] = useState(false);
     const [toastMessage, setToastMessage] = useState('');
+    
+    // הצגת תעודה
+    const [selectedCertificate, setSelectedCertificate] = useState<string | null>(null);
 
     // טעינת נתונים מהשרת
     useEffect(() => {
@@ -505,7 +508,7 @@ ${itemsList}
                                 }}
                                 onViewCertificate={(equipment) => {
                                     if (equipment.certificate) {
-                                        window.open(equipment.certificate, '_blank');
+                                        setSelectedCertificate(equipment.certificate);
                                     }
                                 }}
                                 onUploadCertificate={(equipment) => {
@@ -833,6 +836,44 @@ ${itemsList}
                         <div>
                             <p className="font-bold text-lg">{toastMessage}</p>
                             <p className="text-sm text-green-100">הפריטים נוספו בהצלחה</p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal להצגת תעודה */}
+            {selectedCertificate && (
+                <div 
+                    className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
+                    onClick={() => setSelectedCertificate(null)}
+                >
+                    <div 
+                        className="max-w-6xl w-full max-h-[90vh] relative bg-white rounded-lg"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="p-4 border-b flex justify-between items-center sticky top-0 bg-white rounded-t-lg">
+                            <h3 className="text-xl font-bold">תעודת כיול</h3>
+                            <button
+                                onClick={() => setSelectedCertificate(null)}
+                                className="text-gray-500 hover:text-gray-700 text-3xl font-bold leading-none"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                        <div className="p-4 overflow-auto max-h-[calc(90vh-80px)]">
+                            {selectedCertificate.startsWith('data:application/pdf') ? (
+                                <iframe 
+                                    src={selectedCertificate}
+                                    className="w-full h-[calc(90vh-120px)]"
+                                    title="תעודת כיול"
+                                />
+                            ) : (
+                                <img 
+                                    src={selectedCertificate} 
+                                    alt="תעודת כיול"
+                                    className="max-w-full h-auto mx-auto rounded"
+                                />
+                            )}
                         </div>
                     </div>
                 </div>
