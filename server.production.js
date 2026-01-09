@@ -105,7 +105,7 @@ app.put('/api/employees/display-order', async (req, res) => {
 // Equipment routes
 app.get('/api/equipment', async (req, res) => {
     try {
-        const equipment = await EquipmentModel.findAll();
+        const equipment = await EquipmentModel.getAll();
         res.json(equipment);
     } catch (error) {
         console.error('Error fetching equipment:', error);
