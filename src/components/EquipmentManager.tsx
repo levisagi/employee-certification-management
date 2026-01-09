@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Filter, AlertCircle, CheckCircle, Clock, ShoppingCart } from 'lucide-react';
+import { Plus, Search, Filter, AlertCircle, CheckCircle, Clock, ShoppingCart, Printer } from 'lucide-react';
 import EquipmentTable from './EquipmentTable';
 import EquipmentForm from './EquipmentForm';
 import { Equipment, calculateEquipmentStatus } from '../models/equipment';
+import { APP_VERSION } from '../version';
 import { 
     fetchEquipment, 
     createEquipment, 
@@ -24,7 +25,7 @@ const EquipmentManager: React.FC<EquipmentManagerProps> = ({ onBackToHome }) => 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [showStatusModal, setShowStatusModal] = useState(false);
-    const [modalStatus, setModalStatus] = useState<'expiring' | 'expired' | null>(null);
+    const [modalStatus, setModalStatus] = useState<'valid' | 'expiring' | 'expired' | null>(null);
     
     // סל כיול
     const [calibrationCart, setCalibrationCart] = useState<Equipment[]>([]);
@@ -107,14 +108,31 @@ const EquipmentManager: React.FC<EquipmentManagerProps> = ({ onBackToHome }) => 
         setSelectedItems(new Set());
         setShowStatusModal(false);
         
-        // הצגת toast
-        setToastMessage(`✓ ${newItems.length} פריטים נוספו לסל הכיול`);
+        // הצגת toast עם הודעה מותאמת לסטטוס
+        let message = '';
+        if (modalStatus === 'valid') {
+            message = `✓ ${newItems.length} פריטים תקינים נוספו לסל הכיול`;
+        } else if (modalStatus === 'expiring') {
+            message = `⚠ ${newItems.length} פריטים מתקרבים לפקיעה נוספו לסל`;
+        } else if (modalStatus === 'expired') {
+            message = `🔴 ${newItems.length} פריטים דחופים נוספו לסל`;
+        }
+        
+        setToastMessage(message);
         setShowToast(true);
         setTimeout(() => setShowToast(false), 3000);
     };
 
     const removeFromCart = (equipmentId: string) => {
+        const removedItem = calibrationCart.find(item => item._id === equipmentId);
         setCalibrationCart(calibrationCart.filter(item => item._id !== equipmentId));
+        
+        // הצגת הודעה
+        if (removedItem) {
+            setToastMessage(`🗑️ ${removedItem.name} הוסר מהסל`);
+            setShowToast(true);
+            setTimeout(() => setShowToast(false), 3000);
+        }
     };
 
     const requestQuote = () => {
@@ -138,6 +156,110 @@ ${itemsList}
         // פתיחת אפליקציית המייל
         const mailtoLink = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
         window.location.href = mailtoLink;
+    };
+
+    const printCart = () => {
+        // יצירת חלון הדפסה
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) return;
+
+        // בניית HTML להדפסה
+        const currentDate = new Date().toLocaleDateString('he-IL');
+        const itemsHTML = calibrationCart.map((eq, index) => `
+            <tr>
+                <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${index + 1}</td>
+                <td style="border: 1px solid #ddd; padding: 8px;">${eq.name}</td>
+                <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${eq.serialNumber}</td>
+                <td style="border: 1px solid #ddd; padding: 8px;">${eq.company || '-'}</td>
+                <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${new Date(eq.nextCalibrationDate).toLocaleDateString('he-IL')}</td>
+                <td style="border: 1px solid #ddd; padding: 8px;">${eq.location || '-'}</td>
+            </tr>
+        `).join('');
+
+        const htmlContent = `
+            <!DOCTYPE html>
+            <html dir="rtl" lang="he">
+            <head>
+                <meta charset="UTF-8">
+                <title>סל כיול - ${currentDate}</title>
+                <style>
+                    body {
+                        font-family: Arial, sans-serif;
+                        padding: 20px;
+                        direction: rtl;
+                    }
+                    h1 {
+                        text-align: center;
+                        color: #0A192F;
+                        border-bottom: 3px solid #0A192F;
+                        padding-bottom: 10px;
+                    }
+                    .info {
+                        margin: 20px 0;
+                        font-size: 14px;
+                    }
+                    table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin-top: 20px;
+                    }
+                    th {
+                        background-color: #0A192F;
+                        color: white;
+                        padding: 10px;
+                        border: 1px solid #ddd;
+                        text-align: center;
+                    }
+                    td {
+                        padding: 8px;
+                        border: 1px solid #ddd;
+                    }
+                    .footer {
+                        margin-top: 30px;
+                        text-align: center;
+                        font-size: 12px;
+                        color: #666;
+                    }
+                    @media print {
+                        body { padding: 10px; }
+                    }
+                </style>
+            </head>
+            <body>
+                <h1>🛠️ סל כיול - רשימת ציוד לכיול</h1>
+                <div class="info">
+                    <p><strong>תאריך הדפסה:</strong> ${currentDate}</p>
+                    <p><strong>סה״כ פריטים:</strong> ${calibrationCart.length}</p>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>שם הצב״ד</th>
+                            <th>מספר סידורי</th>
+                            <th>חברה</th>
+                            <th>תאריך כיול הבא</th>
+                            <th>מיקום</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${itemsHTML}
+                    </tbody>
+                </table>
+                <div class="footer">
+                    <p>מערכת ניהול צב״דים - ${new Date().getFullYear()}</p>
+                </div>
+                <script>
+                    window.onload = function() {
+                        window.print();
+                    }
+                </script>
+            </body>
+            </html>
+        `;
+
+        printWindow.document.write(htmlContent);
+        printWindow.document.close();
     };
 
     // סינון הציוד
@@ -224,8 +346,10 @@ ${itemsList}
                             <p className="text-gray-300 mt-1">ניהול וכיול ציוד</p>
                         </div>
                         
-                        {/* רווח לאיזון */}
-                        <div className="w-24"></div>
+                        {/* מספר גרסה */}
+                        <div className="w-24 flex justify-end">
+                            <span className="text-xs text-white">v {APP_VERSION}</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -243,7 +367,13 @@ ${itemsList}
                         </div>
                     </div>
                     
-                    <div className="bg-white rounded-lg shadow-md p-4 border-r-4 border-green-500">
+                    <button
+                        onClick={() => {
+                            setModalStatus('valid');
+                            setShowStatusModal(true);
+                        }}
+                        className="bg-white rounded-lg shadow-md p-4 border-r-4 border-green-500 hover:shadow-lg transition-all cursor-pointer text-right"
+                    >
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-gray-600 text-sm">כיול בתוקף</p>
@@ -251,7 +381,7 @@ ${itemsList}
                             </div>
                             <CheckCircle className="text-green-500" size={32} />
                         </div>
-                    </div>
+                    </button>
                     
                     <button
                         onClick={() => {
@@ -399,7 +529,9 @@ ${itemsList}
                     >
                         <div className="p-4 border-b flex justify-between items-center bg-[#0A192F] text-white">
                             <h2 className="text-xl font-semibold">
-                                {modalStatus === 'expiring' ? '⚠ ציוד מתקרב לפקיעה' : '✗ ציוד שנדרש כיול'}
+                                {modalStatus === 'valid' && '✓ ציוד בכיול תקף'}
+                                {modalStatus === 'expiring' && '⚠ ציוד מתקרב לפקיעה'}
+                                {modalStatus === 'expired' && '✗ ציוד שנדרש כיול'}
                             </h2>
                             <button 
                                 onClick={() => setShowStatusModal(false)}
@@ -490,7 +622,11 @@ ${itemsList}
                                                                 {new Date(eq.nextCalibrationDate).toLocaleDateString('he-IL')}
                                                             </td>
                                                             <td className="px-4 py-3 text-sm">
-                                                                <span className={`font-bold ${diffDays < 0 ? 'text-red-600' : 'text-yellow-600'}`}>
+                                                                <span className={`font-bold ${
+                                                                    diffDays < 0 ? 'text-red-600' : 
+                                                                    modalStatus === 'valid' ? 'text-green-600' : 
+                                                                    'text-yellow-600'
+                                                                }`}>
                                                                     {diffDays < 0 ? `${Math.abs(diffDays)} ימים באיחור` : `${diffDays} ימים`}
                                                                 </span>
                                                             </td>
@@ -607,16 +743,32 @@ ${itemsList}
                         {calibrationCart.length > 0 && (
                             <div className="p-4 border-t bg-gray-50">
                                 <div className="flex justify-between items-center mb-3">
-                                    <button
-                                        onClick={() => {
-                                            if (window.confirm('האם אתה בטוח שברצונך לרוקן את הסל?')) {
-                                                setCalibrationCart([]);
-                                            }
-                                        }}
-                                        className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-                                    >
-                                        רוקן סל
-                                    </button>
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={printCart}
+                                            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+                                        >
+                                            <Printer size={18} />
+                                            הדפס
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                if (window.confirm('האם אתה בטוח שברצונך לרוקן את הסל?')) {
+                                                    const itemCount = calibrationCart.length;
+                                                    setCalibrationCart([]);
+                                                    setShowCart(false);
+                                                    
+                                                    // הצגת הודעה
+                                                    setToastMessage(`🗑️ הסל רוקן! ${itemCount} פריטים הוסרו`);
+                                                    setShowToast(true);
+                                                    setTimeout(() => setShowToast(false), 3000);
+                                                }
+                                            }}
+                                            className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                                        >
+                                            רוקן סל
+                                        </button>
+                                    </div>
                                     <div className="text-lg font-bold text-gray-700">
                                         סה״כ: {calibrationCart.length} פריטים לכיול
                                     </div>

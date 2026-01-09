@@ -46,7 +46,7 @@ class EmployeeModel {
                                 )
                             )
                         END ORDER BY c.created_at
-                    ) FILTER (WHERE c.id IS NOT NULL),
+                        ) FILTER (WHERE c.id IS NOT NULL),
                     '[]'
                 ) as certifications
             FROM employees e

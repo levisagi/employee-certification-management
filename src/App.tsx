@@ -11,9 +11,11 @@ import Settings from './components/Settings';
 import CertificationCopyModal from './components/CertificationCopyModal';
 import LandingPage from './components/LandingPage';
 import EquipmentManager from './components/EquipmentManager';
+import LoadingProgress from './components/LoadingProgress';
 import { Employee, Certification } from './models/employee';
 import { fetchEmployees, createEmployee, updateEmployee, deleteEmployee, copyCertifications } from './services/api';
 import { login, logout, isAuthenticated, getCurrentUser, User } from './services/auth';
+import { APP_VERSION } from './version';
 import './index.css';
 
 function App() {
@@ -62,11 +64,22 @@ function App() {
     const loadEmployees = async () => {
         try {
             setLoading(true);
-            const data = await fetchEmployees();
+            
+            // טעינה עם timeout של 60 שניות
+            const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Timeout')), 60000)
+            );
+            
+            const data = await Promise.race([
+                fetchEmployees(),
+                timeoutPromise
+            ]) as Employee[];
+            
             setEmployees(data);
             setError(null);
-        } catch (err) {
-            setError('Failed to load employees');
+        } catch (err: any) {
+            console.error('Error loading employees:', err);
+            setError(err.message === 'Timeout' ? 'הטעינה לוקחת זמן רב מדי. בדוק את החיבור לאינטרנט.' : 'שגיאה בטעינת עובדים');
         } finally {
             setLoading(false);
         }
@@ -241,14 +254,9 @@ function App() {
         return <Login onLogin={handleLogin} error={loginError || undefined} />;
     }
 
-    if (loading && employees.length === 0) return (
-        <div className="min-h-screen bg-gray-200 flex items-center justify-center">
-            <div className="text-center text-gray-600">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                <p>טוען...</p>
-            </div>
-        </div>
-    );
+    if (loading && employees.length === 0) {
+        return <LoadingProgress message="טוען נתוני עובדים..." />;
+    }
 
     if (error) return (
         <div className="min-h-screen bg-gray-200 flex items-center justify-center">
@@ -266,8 +274,10 @@ function App() {
                 <div className="container mx-auto py-2 px-3">
                     {/* שורה ראשונה: כותרת במרכז, משתמש וכפתורים */}
                     <div className="flex items-center justify-between mb-2">
-                        {/* רווח ריק בצד ימין לאיזון */}
-                        <div className="w-1/4"></div>
+                        {/* מספר גרסה בצד שמאל */}
+                        <div className="w-1/4 flex justify-start">
+                            <span className="text-xs text-white">v {APP_VERSION}</span>
+                        </div>
                         
                         {/* כותרת במרכז */}
                         <div className="text-center w-2/4 flex flex-col items-center">
