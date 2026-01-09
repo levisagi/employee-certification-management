@@ -1,0 +1,21 @@
+name: my-typescript-project
+region: nyc
+services:
+  - name: web
+    github:
+      branch: main
+      deploy_on_push: true
+    dockerfile_path: Dockerfile
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    http_port: 3000
+    routes:
+      - path: /
+    envs:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        scope: RUN_AND_BUILD_TIME
+      - key: PORT
+        value: "3000"
+
