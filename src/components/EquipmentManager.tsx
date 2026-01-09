@@ -345,11 +345,11 @@ ${itemsList}
                         )}
                         
                         {/* כותרת עם לוגו */}
-                        <div className="flex-1 flex items-center justify-center gap-4">
+                        <div className="flex-1 flex items-center justify-center gap-5">
                             {/* לוגו ציוד מדידה */}
                             <svg 
-                                width="60" 
-                                height="60" 
+                                width="80" 
+                                height="80" 
                                 viewBox="0 0 100 100" 
                                 className="flex-shrink-0"
                             >
@@ -393,8 +393,8 @@ ${itemsList}
                             
                             {/* טקסט */}
                             <div className="text-center">
-                                <h1 className="text-3xl font-bold">מערכת ניהול צב״דים</h1>
-                                <p className="text-gray-300 mt-1">ניהול וכיול ציוד</p>
+                                <h1 className="text-3xl font-bold tracking-wide">Equipment Calibration System</h1>
+                                <p className="text-gray-300 mt-1 text-sm tracking-wider">Measurement & Testing Equipment Management</p>
                             </div>
                         </div>
                         
