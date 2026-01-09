@@ -239,7 +239,8 @@ const EquipmentForm: React.FC<EquipmentFormProps> = ({ onSubmit, initialData, on
                         </button>
                     </div>
                 ) : (
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-col sm:flex-row gap-3">
+                        {/* כפתור העלאה רגיל */}
                         <input
                             ref={fileInputRef}
                             type="file"
@@ -250,12 +251,30 @@ const EquipmentForm: React.FC<EquipmentFormProps> = ({ onSubmit, initialData, on
                         />
                         <label
                             htmlFor="certificate-upload"
-                            className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors cursor-pointer"
+                            className="flex items-center justify-center gap-2 px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors cursor-pointer"
                         >
                             <Upload size={18} />
-                            <span>העלה תעודת כיול</span>
+                            <span>העלה מהגלריה</span>
                         </label>
-                        <span className="text-sm text-gray-500">PDF או תמונה (מקסימום 10MB)</span>
+
+                        {/* כפתור צילום (מובייל) */}
+                        <input
+                            type="file"
+                            accept="image/*"
+                            capture="environment"
+                            onChange={handleCertificateUpload}
+                            className="hidden"
+                            id="certificate-camera"
+                        />
+                        <label
+                            htmlFor="certificate-camera"
+                            className="flex md:hidden items-center justify-center gap-2 px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors cursor-pointer"
+                        >
+                            <Upload size={18} />
+                            <span>📷 צלם תעודה</span>
+                        </label>
+
+                        <span className="text-sm text-gray-500 self-center">PDF או תמונה (מקסימום 10MB)</span>
                     </div>
                 )}
             </div>

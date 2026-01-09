@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Search, Filter, AlertCircle, CheckCircle, Clock, ShoppingCart, Printer } from 'lucide-react';
 import EquipmentTable from './EquipmentTable';
+import EquipmentCard from './EquipmentCard';
 import EquipmentForm from './EquipmentForm';
 import { Equipment, calculateEquipmentStatus } from '../models/equipment';
 import { APP_VERSION } from '../version';
@@ -356,7 +357,7 @@ ${itemsList}
 
             <div className="container mx-auto px-4 py-6">
                 {/* סטטיסטיקות */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6">
                     <div className="bg-white rounded-lg shadow-md p-4 border-r-4 border-blue-500">
                         <div className="flex items-center justify-between">
                             <div>
@@ -417,81 +418,114 @@ ${itemsList}
                 </div>
 
                 {/* כלי סינון וחיפוש */}
-                <div className="bg-white rounded-lg shadow-md p-4 mb-6">
-                    <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-                        <div className="flex flex-col md:flex-row gap-4 flex-1">
-                            {/* חיפוש */}
-                            <div className="relative flex-1">
-                                <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-                                <input
-                                    type="text"
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    placeholder="חיפוש לפי שם, מספר סידורי, מיקום..."
-                                    className="w-full pr-10 pl-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                />
-                            </div>
+                <div className="bg-white rounded-lg shadow-md p-3 md:p-4 mb-6">
+                    <div className="flex flex-col gap-3">
+                        {/* שורה ראשונה: חיפוש */}
+                        <div className="relative w-full">
+                            <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                            <input
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder="חיפוש לפי שם, מספר סידורי, מיקום..."
+                                className="w-full pr-10 pl-4 py-3 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
+                            />
+                        </div>
 
+                        {/* שורה שנייה: סינון וכפתורים */}
+                        <div className="flex flex-col sm:flex-row gap-2">
                             {/* סינון לפי סטטוס */}
                             <select
                                 value={statusFilter}
                                 onChange={(e) => setStatusFilter(e.target.value as any)}
-                                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                className="flex-1 px-4 py-3 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
                             >
                                 <option value="all">כל הסטטוסים</option>
                                 <option value="valid">✓ כיול בתוקף</option>
                                 <option value="expiring">⚠ מתקרב לפקיעה</option>
                                 <option value="expired">✗ נדרש כיול</option>
                             </select>
+
+                            {/* כפתור סל כיול */}
+                            <button
+                                onClick={() => setShowCart(true)}
+                                className="relative flex items-center justify-center gap-2 bg-purple-600 text-white px-4 py-3 md:py-2 rounded-lg hover:bg-purple-700 transition-colors font-semibold"
+                            >
+                                <ShoppingCart size={20} />
+                                <span className="md:inline">סל כיול</span>
+                                {calibrationCart.length > 0 && (
+                                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+                                        {calibrationCart.length}
+                                    </span>
+                                )}
+                            </button>
+
+                            {/* כפתור הוספה */}
+                            <button
+                                onClick={() => {
+                                    setEditingEquipment(null);
+                                    setShowForm(true);
+                                }}
+                                className="flex items-center justify-center gap-2 bg-emerald-500 text-white px-4 py-3 md:py-2 rounded-lg hover:bg-emerald-600 transition-colors font-semibold"
+                            >
+                                <Plus size={20} />
+                                <span>הוסף ציוד</span>
+                            </button>
                         </div>
-
-                        {/* כפתור סל כיול */}
-                        <button
-                            onClick={() => setShowCart(true)}
-                            className="relative flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors font-semibold whitespace-nowrap"
-                        >
-                            <ShoppingCart size={20} />
-                            <span>סל כיול</span>
-                            {calibrationCart.length > 0 && (
-                                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-bold">
-                                    {calibrationCart.length}
-                                </span>
-                            )}
-                        </button>
-
-                        {/* כפתור הוספה */}
-                        <button
-                            onClick={() => {
-                                setEditingEquipment(null);
-                                setShowForm(true);
-                            }}
-                            className="flex items-center gap-2 bg-emerald-500 text-white px-6 py-2 rounded-lg hover:bg-emerald-600 transition-colors font-semibold whitespace-nowrap"
-                        >
-                            <Plus size={20} />
-                            הוסף ציוד
-                        </button>
                     </div>
                 </div>
 
-                {/* טבלת הציוד */}
-                <EquipmentTable
-                    equipment={filteredEquipment}
-                    onEdit={(eq) => {
-                        setEditingEquipment(eq);
-                        setShowForm(true);
-                    }}
-                    onDelete={handleDeleteEquipment}
-                />
+                {/* טבלת הציוד - מחשב */}
+                <div className="hidden md:block">
+                    <EquipmentTable
+                        equipment={filteredEquipment}
+                        onEdit={(eq) => {
+                            setEditingEquipment(eq);
+                            setShowForm(true);
+                        }}
+                        onDelete={handleDeleteEquipment}
+                    />
+                </div>
+
+                {/* כרטיסי ציוד - מובייל */}
+                <div className="md:hidden">
+                    {filteredEquipment.length === 0 ? (
+                        <div className="text-center py-12 text-gray-500">
+                            <p className="text-lg">לא נמצא ציוד 🔍</p>
+                            <p className="text-sm mt-2">נסה לשנות את החיפוש או הסינון</p>
+                        </div>
+                    ) : (
+                        filteredEquipment.map((eq) => (
+                            <EquipmentCard
+                                key={eq._id}
+                                equipment={eq}
+                                onEdit={(equipment) => {
+                                    setEditingEquipment(equipment);
+                                    setShowForm(true);
+                                }}
+                                onViewCertificate={(equipment) => {
+                                    if (equipment.certificate) {
+                                        window.open(equipment.certificate, '_blank');
+                                    }
+                                }}
+                                onUploadCertificate={(equipment) => {
+                                    setEditingEquipment(equipment);
+                                    setShowForm(true);
+                                }}
+                            />
+                        ))
+                    )}
+                </div>
             </div>
 
             {/* Modal לטופס */}
             {showForm && (
                 <div 
-                    className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+                    className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 md:p-4"
                     onClick={() => setShowForm(false)}
                 >
                     <div 
-                        className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-auto"
+                        className="bg-white md:rounded-lg shadow-xl w-full h-full md:h-auto md:max-w-3xl md:max-h-[90vh] overflow-auto"
                         onClick={e => e.stopPropagation()}
                     >
                         <div className="p-4 border-b flex justify-between items-center sticky top-0 bg-white z-10">
@@ -520,11 +554,11 @@ ${itemsList}
             {/* Status Modal - ציוד לפי סטטוס */}
             {showStatusModal && modalStatus && (
                 <div 
-                    className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+                    className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 md:p-4"
                     onClick={() => setShowStatusModal(false)}
                 >
                     <div 
-                        className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-hidden"
+                        className="bg-white md:rounded-lg shadow-xl w-full h-full md:h-auto md:max-w-6xl md:max-h-[90vh] overflow-hidden"
                         onClick={e => e.stopPropagation()}
                     >
                         <div className="p-4 border-b flex justify-between items-center bg-[#0A192F] text-white">
@@ -658,11 +692,11 @@ ${itemsList}
             {/* Cart Modal - סל כיול */}
             {showCart && (
                 <div 
-                    className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+                    className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 md:p-4"
                     onClick={() => setShowCart(false)}
                 >
                     <div 
-                        className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-hidden"
+                        className="bg-white md:rounded-lg shadow-xl w-full h-full md:h-auto md:max-w-6xl md:max-h-[90vh] overflow-hidden"
                         onClick={e => e.stopPropagation()}
                     >
                         <div className="p-4 border-b flex justify-between items-center bg-purple-600 text-white">
