@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { Edit2, FileText, ShoppingCart, Camera } from 'lucide-react';
 import { Equipment, calculateEquipmentStatus } from '../models/equipment';
 
@@ -6,7 +6,7 @@ interface EquipmentCardProps {
     equipment: Equipment;
     onEdit: (equipment: Equipment) => void;
     onViewCertificate: (equipment: Equipment) => void;
-    onUploadCertificate: (equipment: Equipment) => void;
+    onUploadCertificate: (equipment: Equipment, file: File) => void;
     onAddToCart?: (equipment: Equipment) => void;
 }
 
@@ -17,6 +17,18 @@ const EquipmentCard: React.FC<EquipmentCardProps> = ({
     onUploadCertificate,
     onAddToCart 
 }) => {
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleCameraClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            onUploadCertificate(equipment, file);
+        }
+    };
     const status = calculateEquipmentStatus(equipment.nextCalibrationDate);
     const nextDate = new Date(equipment.nextCalibrationDate);
     const today = new Date();
@@ -99,13 +111,23 @@ const EquipmentCard: React.FC<EquipmentCardProps> = ({
                         הצג תעודה
                     </button>
                 ) : (
-                    <button
-                        onClick={() => onUploadCertificate(equipment)}
-                        className="flex items-center justify-center gap-2 px-4 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-semibold text-sm"
-                    >
-                        <Camera size={18} />
-                        העלה תעודה
-                    </button>
+                    <>
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            capture="environment"
+                            onChange={handleFileChange}
+                            className="hidden"
+                        />
+                        <button
+                            onClick={handleCameraClick}
+                            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-semibold text-sm"
+                        >
+                            <Camera size={18} />
+                            העלה תעודה
+                        </button>
+                    </>
                 )}
                 
                 <button

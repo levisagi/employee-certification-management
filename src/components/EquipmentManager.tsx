@@ -338,7 +338,7 @@ ${itemsList}
                         {onBackToHome && (
                             <button
                                 onClick={onBackToHome}
-                                className="flex items-center gap-2 bg-[#172A46] hover:bg-[#1F3A67] text-white px-3 py-1.5 rounded-lg transition-colors text-sm"
+                                className="flex items-center gap-1 bg-[#172A46] hover:bg-[#1F3A67] text-white px-2 py-1 md:px-3 md:py-1.5 rounded-lg transition-colors text-xs md:text-sm"
                             >
                                 ← חזרה
                             </button>
@@ -559,9 +559,30 @@ ${itemsList}
                                         setSelectedCertificate(equipment.certificate);
                                     }
                                 }}
-                                onUploadCertificate={(equipment) => {
-                                    setEditingEquipment(equipment);
-                                    setShowForm(true);
+                                onUploadCertificate={async (equipment, file) => {
+                                    // דחיסת התמונה והעלאה ישירה
+                                    try {
+                                        const { compressImage } = await import('../utils/imageCompression');
+                                        const originalSizeKB = (file.size / 1024).toFixed(0);
+                                        const compressedImage = await compressImage(file, {
+                                            maxWidth: 1600,
+                                            maxHeight: 1600,
+                                            quality: 0.85,
+                                            maxSizeMB: 0.5
+                                        });
+                                        
+                                        const compressedSizeKB = ((compressedImage.length * 3) / 4 / 1024).toFixed(0);
+                                        const savings = ((1 - (parseInt(compressedSizeKB) / parseInt(originalSizeKB))) * 100).toFixed(0);
+                                        
+                                        alert(`✅ תעודה נדחסה בהצלחה!\n\n📊 גודל מקורי: ${originalSizeKB}KB\n📉 גודל דחוס: ${compressedSizeKB}KB\n💾 חיסכון: ${savings}%`);
+                                        
+                                        // עדכון הציוד עם התעודה
+                                        const updatedEquipment = { ...equipment, certificate: compressedImage };
+                                        await handleEditEquipment(updatedEquipment);
+                                    } catch (error) {
+                                        console.error('Error uploading certificate:', error);
+                                        alert('שגיאה בהעלאת התעודה');
+                                    }
                                 }}
                             />
                         ))
