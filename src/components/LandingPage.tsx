@@ -133,8 +133,25 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigateToTraining, onNavig
         </div>
 
         {/* Footer */}
-        <div className="text-center mt-16 text-gray-400">
-          <p className="text-lg tracking-wider">Choose the system that suits your needs</p>
+        <div className="text-center mt-16 space-y-6">
+          <p className="text-lg text-gray-400 tracking-wider">Choose the system that suits your needs</p>
+          
+          {/* Organization Info */}
+          <div className="space-y-2">
+            <h3 className="text-2xl font-bold text-white tracking-wide">
+              Israel Airports Authority
+            </h3>
+            <p className="text-xl text-gray-300 tracking-wider">
+              Navigation Department
+            </p>
+          </div>
+          
+          {/* Developer Credit */}
+          <div className="pt-4 border-t border-gray-700 mx-auto max-w-md">
+            <p className="text-sm text-gray-500">
+              מערכת זו פותחה ע״י שגיא לוי - גרסה 1.1
+            </p>
+          </div>
         </div>
       </div>
     </div>

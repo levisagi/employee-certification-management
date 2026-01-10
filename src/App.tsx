@@ -282,13 +282,13 @@ function App() {
                         {/* כותרת במרכז */}
                         <div className="text-center w-2/4 flex flex-col items-center">
                             <div className="flex items-center gap-2">
-                                <img src="/images/logo.svg" alt="CertVision Logo" className="h-10 w-10" />
-                                <h1 className="text-2xl font-bold text-white">
-                                    CertVision
+                                <img src="/images/logo.svg" alt="Employee Certification Logo" className="h-10 w-10" />
+                                <h1 className="text-xl font-bold text-white tracking-wide">
+                                    Employee Certification
                                 </h1>
                             </div>
-                            <div className="text-xs text-white mt-0.5">
-                                Certification Management Excellence
+                            <div className="text-xs text-white mt-0.5 tracking-wider">
+                                Training Management System
                             </div>
                         </div>
                         

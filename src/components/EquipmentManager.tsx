@@ -346,12 +346,12 @@ ${itemsList}
                         
                         {/* כותרת עם לוגו */}
                         <div className="flex-1 flex items-center justify-center gap-5">
-                            {/* לוגו ציוד מדידה */}
+                            {/* לוגו ציוד מדידה - מוסתר במובייל */}
                             <svg 
                                 width="80" 
                                 height="80" 
                                 viewBox="0 0 100 100" 
-                                className="flex-shrink-0"
+                                className="flex-shrink-0 hidden md:block"
                             >
                                 {/* מסגרת ספקטרום אנלייזר */}
                                 <rect x="10" y="20" width="80" height="60" rx="4" fill="#1E293B" stroke="#3B82F6" strokeWidth="2"/>
@@ -391,10 +391,10 @@ ${itemsList}
                                 </defs>
                             </svg>
                             
-                            {/* טקסט */}
+                            {/* טקסט - קטן יותר במובייל */}
                             <div className="text-center">
-                                <h1 className="text-3xl font-bold tracking-wide">Equipment Calibration System</h1>
-                                <p className="text-gray-300 mt-1 text-sm tracking-wider">Measurement & Testing Equipment Management</p>
+                                <h1 className="text-lg md:text-3xl font-bold tracking-wide">Equipment Calibration</h1>
+                                <p className="text-gray-300 mt-0.5 md:mt-1 text-xs md:text-sm tracking-wider hidden md:block">Measurement & Testing Equipment Management</p>
                             </div>
                         </div>
                         
