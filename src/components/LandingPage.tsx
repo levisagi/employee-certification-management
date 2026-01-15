@@ -7,7 +7,7 @@ interface LandingPageProps {
 
 const LandingPage: React.FC<LandingPageProps> = ({ onNavigateToTraining, onNavigateToHR }) => {
   return (
-    <div className="min-h-screen bg-[#0A192F] flex items-start sm:items-center justify-center p-2 sm:p-4 pt-8 sm:pt-4">
+    <div className="min-h-screen bg-[#0A192F] flex items-start sm:items-center justify-center p-2 sm:p-4 pt-2 sm:pt-4">
       <div className="max-w-5xl w-full">
         {/* Header */}
         <div className="text-center mb-3 sm:mb-8 md:mb-16">
