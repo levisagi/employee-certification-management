@@ -7,14 +7,14 @@ interface LandingPageProps {
 
 const LandingPage: React.FC<LandingPageProps> = ({ onNavigateToTraining, onNavigateToHR }) => {
   return (
-    <div className="min-h-screen bg-[#0A192F] flex items-center justify-center p-2 sm:p-4">
+    <div className="min-h-screen bg-[#0A192F] flex items-start sm:items-center justify-center p-2 sm:p-4 pt-8 sm:pt-4">
       <div className="max-w-5xl w-full">
         {/* Header */}
-        <div className="text-center mb-4 sm:mb-8 md:mb-16">
-          <h1 className="text-2xl sm:text-4xl md:text-6xl font-bold text-white mb-1 sm:mb-2 md:mb-4 tracking-wide">
+        <div className="text-center mb-3 sm:mb-8 md:mb-16">
+          <h1 className="text-xl sm:text-4xl md:text-6xl font-bold text-white mb-1 sm:mb-2 md:mb-4 tracking-wide">
             Welcome
           </h1>
-          <p className="text-sm sm:text-xl md:text-3xl text-gray-300 font-medium tracking-wider">
+          <p className="text-xs sm:text-xl md:text-3xl text-gray-300 font-medium tracking-wider">
             Please Select System
           </p>
         </div>
@@ -133,22 +133,22 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigateToTraining, onNavig
         </div>
 
         {/* Footer */}
-        <div className="text-center mt-4 sm:mt-8 md:mt-16 space-y-2 sm:space-y-4 md:space-y-6">
-          <p className="text-xs sm:text-sm md:text-lg text-gray-400 tracking-wider">Choose the system that suits your needs</p>
+        <div className="text-center mt-3 sm:mt-8 md:mt-16 space-y-1 sm:space-y-4 md:space-y-6">
+          <p className="text-[10px] sm:text-sm md:text-lg text-gray-400 tracking-wider">Choose the system that suits your needs</p>
           
           {/* Organization Info */}
-          <div className="space-y-1 sm:space-y-2">
-            <h3 className="text-sm sm:text-lg md:text-2xl font-bold text-white tracking-wide">
+          <div className="space-y-0 sm:space-y-2">
+            <h3 className="text-xs sm:text-lg md:text-2xl font-bold text-white tracking-wide">
               Israel Airports Authority
             </h3>
-            <p className="text-xs sm:text-base md:text-xl text-gray-300 tracking-wider">
+            <p className="text-[10px] sm:text-base md:text-xl text-gray-300 tracking-wider">
               Navigation Department
             </p>
           </div>
           
           {/* Developer Credit */}
-          <div className="pt-2 sm:pt-4 border-t border-gray-700 mx-auto max-w-md">
-            <p className="text-xs sm:text-sm text-gray-500">
+          <div className="pt-1 sm:pt-4 border-t border-gray-700 mx-auto max-w-md">
+            <p className="text-[9px] sm:text-sm text-gray-500">
               מערכת זו פותחה ע״י שגיא לוי - גרסה 1.1
             </p>
           </div>
