@@ -7,28 +7,28 @@ interface LandingPageProps {
 
 const LandingPage: React.FC<LandingPageProps> = ({ onNavigateToTraining, onNavigateToHR }) => {
   return (
-    <div className="min-h-screen bg-[#0A192F] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#0A192F] flex items-center justify-center p-2 sm:p-4">
       <div className="max-w-5xl w-full">
         {/* Header */}
-        <div className="text-center mb-16">
-          <h1 className="text-5xl md:text-6xl font-bold text-white mb-4 tracking-wide">
+        <div className="text-center mb-4 sm:mb-8 md:mb-16">
+          <h1 className="text-2xl sm:text-4xl md:text-6xl font-bold text-white mb-1 sm:mb-2 md:mb-4 tracking-wide">
             Welcome
           </h1>
-          <p className="text-2xl md:text-3xl text-gray-300 font-medium tracking-wider">
+          <p className="text-sm sm:text-xl md:text-3xl text-gray-300 font-medium tracking-wider">
             Please Select System
           </p>
         </div>
 
         {/* Buttons Container */}
-        <div className="grid md:grid-cols-2 gap-8 px-4">
+        <div className="grid md:grid-cols-2 gap-3 sm:gap-6 md:gap-8 px-2 sm:px-4">
           {/* Training System Button */}
           <button
             onClick={onNavigateToTraining}
-            className="group relative bg-[#172A46] rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 p-8 border-2 border-[#1F3A67] hover:border-blue-400"
+            className="group relative bg-[#172A46] rounded-xl sm:rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 p-3 sm:p-6 md:p-8 border-2 border-[#1F3A67] hover:border-blue-400"
           >
-            <div className="flex flex-col items-center text-center space-y-6">
+            <div className="flex flex-col items-center text-center space-y-2 sm:space-y-4 md:space-y-6">
               {/* לוגו CertVision */}
-              <svg width="100" height="100" viewBox="0 0 100 100" className="transition-transform duration-300 group-hover:scale-110">
+              <svg width="60" height="60" viewBox="0 0 100 100" className="sm:w-20 sm:h-20 md:w-[100px] md:h-[100px] transition-transform duration-300 group-hover:scale-110">
                 {/* רקע עיגול */}
                 <circle cx="50" cy="50" r="45" fill="#1E3A8A" className="group-hover:fill-[#2563EB] transition-colors duration-300"/>
                 
@@ -49,16 +49,16 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigateToTraining, onNavig
               </svg>
               
               <div>
-                <h2 className="text-2xl font-bold text-white mb-2 tracking-wide">
+                <h2 className="text-base sm:text-xl md:text-2xl font-bold text-white mb-1 sm:mb-2 tracking-wide">
                   Employee Certification
                 </h2>
-                <p className="text-lg text-gray-300 font-medium tracking-wider">
+                <p className="text-xs sm:text-base md:text-lg text-gray-300 font-medium tracking-wider">
                   Training Management System
                 </p>
               </div>
               
-              <div className="pt-2">
-                <span className="text-blue-400 group-hover:text-blue-300 font-semibold text-lg tracking-wide">
+              <div className="pt-1 sm:pt-2">
+                <span className="text-blue-400 group-hover:text-blue-300 font-semibold text-xs sm:text-base md:text-lg tracking-wide">
                   Click to Enter →
                 </span>
               </div>
@@ -68,11 +68,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigateToTraining, onNavig
           {/* Equipment System Button */}
           <button
             onClick={onNavigateToHR}
-            className="group relative bg-[#172A46] rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 p-8 border-2 border-[#1F3A67] hover:border-emerald-400"
+            className="group relative bg-[#172A46] rounded-xl sm:rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 p-3 sm:p-6 md:p-8 border-2 border-[#1F3A67] hover:border-emerald-400"
           >
-            <div className="flex flex-col items-center text-center space-y-6">
+            <div className="flex flex-col items-center text-center space-y-2 sm:space-y-4 md:space-y-6">
               {/* לוגו ספקטרום אנלייזר */}
-              <svg width="100" height="100" viewBox="0 0 100 100" className="transition-transform duration-300 group-hover:scale-110">
+              <svg width="60" height="60" viewBox="0 0 100 100" className="sm:w-20 sm:h-20 md:w-[100px] md:h-[100px] transition-transform duration-300 group-hover:scale-110">
                 {/* רקע עיגול */}
                 <circle cx="50" cy="50" r="45" fill="#047857" className="group-hover:fill-[#10B981] transition-colors duration-300"/>
                 
@@ -115,16 +115,16 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigateToTraining, onNavig
               </svg>
               
               <div>
-                <h2 className="text-2xl font-bold text-white mb-2 tracking-wide">
+                <h2 className="text-base sm:text-xl md:text-2xl font-bold text-white mb-1 sm:mb-2 tracking-wide">
                   Equipment Calibration
                 </h2>
-                <p className="text-lg text-gray-300 font-medium tracking-wider">
+                <p className="text-xs sm:text-base md:text-lg text-gray-300 font-medium tracking-wider">
                   Testing Equipment System
                 </p>
               </div>
               
-              <div className="pt-2">
-                <span className="text-emerald-400 group-hover:text-emerald-300 font-semibold text-lg tracking-wide">
+              <div className="pt-1 sm:pt-2">
+                <span className="text-emerald-400 group-hover:text-emerald-300 font-semibold text-xs sm:text-base md:text-lg tracking-wide">
                   Click to Enter →
                 </span>
               </div>
@@ -133,22 +133,22 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigateToTraining, onNavig
         </div>
 
         {/* Footer */}
-        <div className="text-center mt-16 space-y-6">
-          <p className="text-lg text-gray-400 tracking-wider">Choose the system that suits your needs</p>
+        <div className="text-center mt-4 sm:mt-8 md:mt-16 space-y-2 sm:space-y-4 md:space-y-6">
+          <p className="text-xs sm:text-sm md:text-lg text-gray-400 tracking-wider">Choose the system that suits your needs</p>
           
           {/* Organization Info */}
-          <div className="space-y-2">
-            <h3 className="text-2xl font-bold text-white tracking-wide">
+          <div className="space-y-1 sm:space-y-2">
+            <h3 className="text-sm sm:text-lg md:text-2xl font-bold text-white tracking-wide">
               Israel Airports Authority
             </h3>
-            <p className="text-xl text-gray-300 tracking-wider">
+            <p className="text-xs sm:text-base md:text-xl text-gray-300 tracking-wider">
               Navigation Department
             </p>
           </div>
           
           {/* Developer Credit */}
-          <div className="pt-4 border-t border-gray-700 mx-auto max-w-md">
-            <p className="text-sm text-gray-500">
+          <div className="pt-2 sm:pt-4 border-t border-gray-700 mx-auto max-w-md">
+            <p className="text-xs sm:text-sm text-gray-500">
               מערכת זו פותחה ע״י שגיא לוי - גרסה 1.1
             </p>
           </div>
