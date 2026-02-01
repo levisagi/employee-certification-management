@@ -138,24 +138,30 @@ export const copyCertifications = async (
             delete certCopy.certificate;
             delete certCopy.certificateFileName;
             
-            // עיבוד תאריכים לפורמט נכון
+            // עיבוד תאריכים לפורמט נכון - רק אם הם קיימים ותקינים
             if (certCopy.startDate) {
-                certCopy.startDate = new Date(certCopy.startDate);
+                const startDate = new Date(certCopy.startDate);
+                certCopy.startDate = isNaN(startDate.getTime()) ? null : startDate;
             }
             if (certCopy.endDate) {
-                certCopy.endDate = new Date(certCopy.endDate);
+                const endDate = new Date(certCopy.endDate);
+                certCopy.endDate = isNaN(endDate.getTime()) ? null : endDate;
             }
             if (certCopy.issueDate) {
-                certCopy.issueDate = new Date(certCopy.issueDate);
+                const issueDate = new Date(certCopy.issueDate);
+                certCopy.issueDate = isNaN(issueDate.getTime()) ? null : issueDate;
             }
             if (certCopy.expiryDate) {
-                certCopy.expiryDate = new Date(certCopy.expiryDate);
+                const expiryDate = new Date(certCopy.expiryDate);
+                certCopy.expiryDate = isNaN(expiryDate.getTime()) ? null : expiryDate;
             }
             if (certCopy.ojt1 && certCopy.ojt1.date) {
-                certCopy.ojt1.date = new Date(certCopy.ojt1.date);
+                const ojt1Date = new Date(certCopy.ojt1.date);
+                certCopy.ojt1.date = isNaN(ojt1Date.getTime()) ? null : ojt1Date;
             }
             if (certCopy.ojt2 && certCopy.ojt2.date) {
-                certCopy.ojt2.date = new Date(certCopy.ojt2.date);
+                const ojt2Date = new Date(certCopy.ojt2.date);
+                certCopy.ojt2.date = isNaN(ojt2Date.getTime()) ? null : ojt2Date;
             }
             
             // החזרת ההסמכה המשוכפלת
