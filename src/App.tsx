@@ -50,6 +50,16 @@ function App() {
     const departments = ['הכל', ...Array.from(new Set(employees.map(emp => emp.department)))];
 
     useEffect(() => {
+        // בדיקת URL parameters לניווט ישיר למערכת
+        const urlParams = new URLSearchParams(window.location.search);
+        const system = urlParams.get('system');
+        
+        if (system === 'training') {
+            setCurrentPage('training');
+        } else if (system === 'equipment' || system === 'hr') {
+            setCurrentPage('hr');
+        }
+        
         // בדיקת התחברות קודמת
         const authenticated = isAuthenticated();
         if (authenticated) {
@@ -238,15 +248,24 @@ function App() {
     if (currentPage === 'landing') {
         return (
             <LandingPage
-                onNavigateToTraining={() => setCurrentPage('training')}
-                onNavigateToHR={() => setCurrentPage('hr')}
+                onNavigateToTraining={() => {
+                    setCurrentPage('training');
+                    window.history.pushState({}, '', '?system=training');
+                }}
+                onNavigateToHR={() => {
+                    setCurrentPage('hr');
+                    window.history.pushState({}, '', '?system=equipment');
+                }}
             />
         );
     }
 
     // Equipment Management System
     if (currentPage === 'hr') {
-        return <EquipmentManager onBackToHome={() => setCurrentPage('landing')} />;
+        return <EquipmentManager onBackToHome={() => {
+            setCurrentPage('landing');
+            window.history.pushState({}, '', '/');
+        }} />;
     }
 
     // Training System
@@ -298,7 +317,10 @@ function App() {
                                 {currentUser?.fullName || currentUser?.username}
                             </div>
                             <button
-                                onClick={() => setCurrentPage('landing')}
+                                onClick={() => {
+                                    setCurrentPage('landing');
+                                    window.history.pushState({}, '', '/');
+                                }}
                                 className="flex items-center gap-0.5 bg-[#172A46] text-gray-300 px-2 py-1 rounded-lg 
                                          hover:bg-[#1F3A67] transition-colors text-xs"
                             >
@@ -317,6 +339,7 @@ function App() {
                                 onClick={() => {
                                     handleLogout();
                                     setCurrentPage('landing');
+                                    window.history.pushState({}, '', '/');
                                 }}
                                 className="flex items-center gap-0.5 bg-[#172A46] text-gray-300 px-2 py-1 rounded-lg 
                                          hover:bg-[#1F3A67] transition-colors text-xs"
