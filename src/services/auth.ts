@@ -32,41 +32,29 @@ export interface User {
   ];
   
   /**
-   * פונקציה המאמתת משתמש לפי שם וסיסמה
-   * במערכת אמיתית זה יהיה API call לשרת
+   * פונקציה המאמתת משתמש - כניסה חופשית ללא אימות
    */
   export const login = async (username: string, password: string): Promise<LoginResult> => {
-    // הדמיית השהייה של קריאת רשת
-    await new Promise(resolve => setTimeout(resolve, 800));
+    // הדמיית השהייה קצרה
+    await new Promise(resolve => setTimeout(resolve, 300));
     
     try {
-      // חיפוש המשתמש במערך ההדגמה
-      const user = DEMO_USERS.find(u => u.username === username && u.password === password);
+      // כניסה חופשית ללא בדיקת סיסמה
+      const userInfo: User = {
+        username: 'guest',
+        fullName: 'משתמש אורח',
+        email: 'guest@system.com'
+      };
       
-      if (user) {
-        // יצירת מידע משתמש ללא הסיסמה
-        const userInfo: User = {
-          username: user.username,
-          fullName: user.fullName,
-          email: user.email
-        };
-        
-        // שמירת המידע בlocal storage
-        localStorage.setItem('user', JSON.stringify(userInfo));
-        localStorage.setItem('isAuthenticated', 'true');
-        
-        // החזרת תוצאה חיובית
-        return {
-          success: true,
-          user: userInfo,
-          token: 'dummy-jwt-token-' + Math.random().toString(36).substr(2)
-        };
-      }
+      // שמירת המידע בlocal storage
+      localStorage.setItem('user', JSON.stringify(userInfo));
+      localStorage.setItem('isAuthenticated', 'true');
       
-      // המשתמש לא נמצא
+      // החזרת תוצאה חיובית תמיד
       return {
-        success: false,
-        error: 'שם משתמש או סיסמה שגויים'
+        success: true,
+        user: userInfo,
+        token: 'guest-token-' + Math.random().toString(36).substr(2)
       };
     } catch (error) {
       console.error('Error during login:', error);

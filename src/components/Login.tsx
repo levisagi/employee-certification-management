@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Lock, User } from 'lucide-react';
+import { LogIn } from 'lucide-react';
 
 interface LoginProps {
   onLogin: (username: string, password: string) => void;
@@ -7,16 +7,14 @@ interface LoginProps {
 }
 
 const Login: React.FC<LoginProps> = ({ onLogin, error }) => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleLogin = async () => {
     setIsLoading(true);
     
     try {
-      await onLogin(username, password);
+      // כניסה ללא אימות - מעביר ערכים ריקים
+      await onLogin('', '');
     } catch (err) {
       console.error('Login error:', err);
     } finally {
@@ -39,50 +37,26 @@ const Login: React.FC<LoginProps> = ({ onLogin, error }) => {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-6">
-          <div>
-            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">שם משתמש</label>
-            <div className="relative">
-              <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                <User size={16} className="text-gray-400 sm:w-[18px] sm:h-[18px]" />
-              </div>
-              <input
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="block w-full pr-10 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                placeholder="הזן שם משתמש"
-                required
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">סיסמה</label>
-            <div className="relative">
-              <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                <Lock size={16} className="text-gray-400 sm:w-[18px] sm:h-[18px]" />
-              </div>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="block w-full pr-10 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                placeholder="הזן סיסמה"
-                required
-              />
-            </div>
-          </div>
-
+        <div className="text-center">
           <button
-            type="submit"
+            onClick={handleLogin}
             disabled={isLoading}
-            className={`w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 sm:py-3 px-4 text-sm sm:text-base rounded-lg transition-colors
+            className={`w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 sm:py-4 px-4 text-base sm:text-lg rounded-lg transition-colors flex items-center justify-center gap-2
               ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
           >
-            {isLoading ? 'מתחבר...' : 'התחבר'}
+            {isLoading ? (
+              <>
+                <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full" />
+                <span>נכנס למערכת...</span>
+              </>
+            ) : (
+              <>
+                <LogIn size={20} />
+                <span>כניסה למערכת</span>
+              </>
+            )}
           </button>
-        </form>
+        </div>
       </div>
     </div>
   );
