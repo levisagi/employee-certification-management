@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Filter, AlertCircle, CheckCircle, Clock, ShoppingCart, Printer } from 'lucide-react';
+import { Plus, Search, Filter, AlertCircle, CheckCircle, Clock, ShoppingCart, Printer, FileText } from 'lucide-react';
 import EquipmentTable from './EquipmentTable';
 import EquipmentCard from './EquipmentCard';
 import EquipmentForm from './EquipmentForm';
@@ -37,6 +37,9 @@ const EquipmentManager: React.FC<EquipmentManagerProps> = ({ onBackToHome }) => 
     
     // הצגת תעודה
     const [selectedCertificate, setSelectedCertificate] = useState<string | null>(null);
+    
+    // דוחות
+    const [showReportsModal, setShowReportsModal] = useState(false);
 
     // טעינת נתונים מהשרת
     useEffect(() => {
@@ -160,6 +163,155 @@ ${itemsList}
         // פתיחת אפליקציית המייל
         const mailtoLink = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
         window.location.href = mailtoLink;
+    };
+
+    // הפקת דוח לפי סטטוס
+    const generateReport = (reportStatus: 'all' | 'valid' | 'expiring' | 'expired') => {
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) return;
+
+        const currentDate = new Date().toLocaleDateString('he-IL');
+        
+        // סינון ציוד לפי סטטוס
+        let reportEquipment = equipment;
+        let reportTitle = 'דוח כל הציוד';
+        
+        if (reportStatus !== 'all') {
+            reportEquipment = equipment.filter(eq => calculateEquipmentStatus(eq.nextCalibrationDate) === reportStatus);
+            if (reportStatus === 'valid') reportTitle = 'דוח ציוד בכיול תקף';
+            if (reportStatus === 'expiring') reportTitle = 'דוח ציוד מתקרב לפקיעה';
+            if (reportStatus === 'expired') reportTitle = 'דוח ציוד שנדרש כיול';
+        }
+
+        const itemsHTML = reportEquipment.map((eq, index) => {
+            const status = calculateEquipmentStatus(eq.nextCalibrationDate);
+            const nextDate = new Date(eq.nextCalibrationDate);
+            const today = new Date();
+            const diffTime = nextDate.getTime() - today.getTime();
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            let statusText = '';
+            let statusColor = '';
+            if (status === 'valid') {
+                statusText = '✓ תקין';
+                statusColor = 'color: green;';
+            } else if (status === 'expiring') {
+                statusText = '⚠ מתקרב לפקיעה';
+                statusColor = 'color: orange;';
+            } else {
+                statusText = '✗ נדרש כיול';
+                statusColor = 'color: red;';
+            }
+            
+            return `
+            <tr>
+                <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${index + 1}</td>
+                <td style="border: 1px solid #ddd; padding: 8px;">${eq.name}</td>
+                <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${eq.serialNumber}</td>
+                <td style="border: 1px solid #ddd; padding: 8px;">${eq.company || '-'}</td>
+                <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${new Date(eq.nextCalibrationDate).toLocaleDateString('he-IL')}</td>
+                <td style="border: 1px solid #ddd; padding: 8px; text-align: center; ${statusColor} font-weight: bold;">
+                    ${diffDays < 0 ? `${Math.abs(diffDays)} ימים באיחור` : `${diffDays} ימים`}
+                </td>
+                <td style="border: 1px solid #ddd; padding: 8px; text-align: center; ${statusColor} font-weight: bold;">${statusText}</td>
+                <td style="border: 1px solid #ddd; padding: 8px;">${eq.location || '-'}</td>
+            </tr>
+        `;
+        }).join('');
+
+        const htmlContent = `
+            <!DOCTYPE html>
+            <html dir="rtl" lang="he">
+            <head>
+                <meta charset="UTF-8">
+                <title>${reportTitle} - ${currentDate}</title>
+                <style>
+                    body {
+                        font-family: Arial, sans-serif;
+                        padding: 20px;
+                        direction: rtl;
+                    }
+                    h1 {
+                        text-align: center;
+                        color: #0A192F;
+                        border-bottom: 3px solid #0A192F;
+                        padding-bottom: 10px;
+                    }
+                    .info {
+                        margin: 20px 0;
+                        font-size: 14px;
+                        background-color: #f3f4f6;
+                        padding: 15px;
+                        border-radius: 8px;
+                    }
+                    table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin-top: 20px;
+                    }
+                    th {
+                        background-color: #0A192F;
+                        color: white;
+                        padding: 10px;
+                        border: 1px solid #ddd;
+                        text-align: center;
+                    }
+                    td {
+                        padding: 8px;
+                        border: 1px solid #ddd;
+                    }
+                    .footer {
+                        margin-top: 30px;
+                        text-align: center;
+                        font-size: 12px;
+                        color: #666;
+                        border-top: 1px solid #ddd;
+                        padding-top: 20px;
+                    }
+                    @media print {
+                        body { padding: 10px; }
+                    }
+                </style>
+            </head>
+            <body>
+                <h1>🛠️ ${reportTitle}</h1>
+                <div class="info">
+                    <p><strong>תאריך הדפסה:</strong> ${currentDate}</p>
+                    <p><strong>סה״כ פריטים בדוח:</strong> ${reportEquipment.length}</p>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>שם הצב״ד</th>
+                            <th>מספר סידורי</th>
+                            <th>חברה</th>
+                            <th>תאריך כיול הבא</th>
+                            <th>ימים נותרו</th>
+                            <th>סטטוס</th>
+                            <th>מיקום</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${itemsHTML}
+                    </tbody>
+                </table>
+                <div class="footer">
+                    <p>מערכת ניהול צב״דים - Israel Airports Authority</p>
+                    <p>Navigation Department - ${new Date().getFullYear()}</p>
+                </div>
+                <script>
+                    window.onload = function() {
+                        window.print();
+                    }
+                </script>
+            </body>
+            </html>
+        `;
+
+        printWindow.document.write(htmlContent);
+        printWindow.document.close();
+        setShowReportsModal(false);
     };
 
     const printCart = () => {
@@ -509,6 +661,15 @@ ${itemsList}
                                         {calibrationCart.length}
                                     </span>
                                 )}
+                            </button>
+
+                            {/* כפתור דוחות */}
+                            <button
+                                onClick={() => setShowReportsModal(true)}
+                                className="flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-3 md:py-2 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+                            >
+                                <FileText size={20} />
+                                <span>דוחות</span>
                             </button>
 
                             {/* כפתור הוספה */}
@@ -943,6 +1104,106 @@ ${itemsList}
                                     className="max-w-full h-auto mx-auto rounded"
                                 />
                             )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal דוחות */}
+            {showReportsModal && (
+                <div 
+                    className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+                    onClick={() => setShowReportsModal(false)}
+                >
+                    <div 
+                        className="bg-white rounded-lg shadow-xl max-w-2xl w-full"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="p-4 border-b flex justify-between items-center bg-blue-600 text-white rounded-t-lg">
+                            <div className="flex items-center gap-2">
+                                <FileText size={24} />
+                                <h2 className="text-xl font-semibold">הפקת דוחות</h2>
+                            </div>
+                            <button 
+                                onClick={() => setShowReportsModal(false)}
+                                className="text-white hover:text-gray-300 text-2xl"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                        
+                        <div className="p-6">
+                            <p className="text-gray-600 mb-6 text-center">בחר את סוג הדוח שברצונך להפיק</p>
+                            
+                            <div className="grid grid-cols-1 gap-4">
+                                {/* דוח כל הציוד */}
+                                <button
+                                    onClick={() => generateReport('all')}
+                                    className="flex items-center justify-between p-4 border-2 border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all group"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className="bg-gray-100 p-3 rounded-lg group-hover:bg-blue-100">
+                                            <Filter className="text-gray-600 group-hover:text-blue-600" size={24} />
+                                        </div>
+                                        <div className="text-right">
+                                            <h3 className="font-bold text-lg text-gray-800">דוח כל הציוד</h3>
+                                            <p className="text-sm text-gray-600">{stats.total} פריטים</p>
+                                        </div>
+                                    </div>
+                                    <Printer className="text-gray-400 group-hover:text-blue-600" size={20} />
+                                </button>
+
+                                {/* דוח ציוד תקין */}
+                                <button
+                                    onClick={() => generateReport('valid')}
+                                    className="flex items-center justify-between p-4 border-2 border-green-300 rounded-lg hover:border-green-500 hover:bg-green-50 transition-all group"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className="bg-green-100 p-3 rounded-lg group-hover:bg-green-200">
+                                            <CheckCircle className="text-green-600" size={24} />
+                                        </div>
+                                        <div className="text-right">
+                                            <h3 className="font-bold text-lg text-gray-800">דוח ציוד בכיול תקף</h3>
+                                            <p className="text-sm text-green-600">{stats.valid} פריטים</p>
+                                        </div>
+                                    </div>
+                                    <Printer className="text-gray-400 group-hover:text-green-600" size={20} />
+                                </button>
+
+                                {/* דוח ציוד מתקרב לפקיעה */}
+                                <button
+                                    onClick={() => generateReport('expiring')}
+                                    className="flex items-center justify-between p-4 border-2 border-yellow-300 rounded-lg hover:border-yellow-500 hover:bg-yellow-50 transition-all group"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className="bg-yellow-100 p-3 rounded-lg group-hover:bg-yellow-200">
+                                            <Clock className="text-yellow-600" size={24} />
+                                        </div>
+                                        <div className="text-right">
+                                            <h3 className="font-bold text-lg text-gray-800">דוח ציוד מתקרב לפקיעה</h3>
+                                            <p className="text-sm text-yellow-600">{stats.expiring} פריטים</p>
+                                        </div>
+                                    </div>
+                                    <Printer className="text-gray-400 group-hover:text-yellow-600" size={20} />
+                                </button>
+
+                                {/* דוח ציוד שנדרש כיול */}
+                                <button
+                                    onClick={() => generateReport('expired')}
+                                    className="flex items-center justify-between p-4 border-2 border-red-300 rounded-lg hover:border-red-500 hover:bg-red-50 transition-all group"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className="bg-red-100 p-3 rounded-lg group-hover:bg-red-200">
+                                            <AlertCircle className="text-red-600" size={24} />
+                                        </div>
+                                        <div className="text-right">
+                                            <h3 className="font-bold text-lg text-gray-800">דוח ציוד שנדרש כיול</h3>
+                                            <p className="text-sm text-red-600">{stats.expired} פריטים</p>
+                                        </div>
+                                    </div>
+                                    <Printer className="text-gray-400 group-hover:text-red-600" size={20} />
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
