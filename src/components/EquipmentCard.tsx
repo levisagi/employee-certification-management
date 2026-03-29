@@ -115,7 +115,7 @@ const EquipmentCard: React.FC<EquipmentCardProps> = ({
                         <input
                             ref={fileInputRef}
                             type="file"
-                            accept="image/*"
+                            accept="application/pdf,image/*"
                             capture="environment"
                             onChange={handleFileChange}
                             className="hidden"

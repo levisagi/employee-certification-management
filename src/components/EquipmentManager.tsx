@@ -1078,31 +1078,50 @@ ${itemsList}
                     onClick={() => setSelectedCertificate(null)}
                 >
                     <div 
-                        className="max-w-6xl w-full max-h-[90vh] relative bg-white rounded-lg"
+                        className="max-w-6xl w-full max-h-[90vh] relative bg-white rounded-lg flex flex-col"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <div className="p-4 border-b flex justify-between items-center sticky top-0 bg-white rounded-t-lg">
-                            <h3 className="text-xl font-bold">תעודת כיול</h3>
-                            <button
-                                onClick={() => setSelectedCertificate(null)}
-                                className="text-gray-500 hover:text-gray-700 text-3xl font-bold leading-none"
-                            >
-                                ✕
-                            </button>
+                        <div className="p-4 border-b flex justify-between items-center bg-white rounded-t-lg flex-shrink-0">
+                            <div className="flex items-center gap-2">
+                                <h3 className="text-xl font-bold">תעודת כיול</h3>
+                                {selectedCertificate.startsWith('data:application/pdf') && (
+                                    <span className="text-sm bg-red-100 text-red-600 px-2 py-1 rounded">PDF</span>
+                                )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                                {selectedCertificate.startsWith('data:application/pdf') && (
+                                    <a
+                                        href={selectedCertificate}
+                                        download="certificate.pdf"
+                                        className="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
+                                    >
+                                        הורד PDF
+                                    </a>
+                                )}
+                                <button
+                                    onClick={() => setSelectedCertificate(null)}
+                                    className="text-gray-500 hover:text-gray-700 text-3xl font-bold leading-none"
+                                >
+                                    ✕
+                                </button>
+                            </div>
                         </div>
-                        <div className="p-4 overflow-auto max-h-[calc(90vh-80px)]">
+                        <div className="flex-1 overflow-hidden">
                             {selectedCertificate.startsWith('data:application/pdf') ? (
                                 <iframe 
                                     src={selectedCertificate}
-                                    className="w-full h-[calc(90vh-120px)]"
+                                    className="w-full h-full border-0"
                                     title="תעודת כיול"
+                                    style={{ minHeight: '600px' }}
                                 />
                             ) : (
-                                <img 
-                                    src={selectedCertificate} 
-                                    alt="תעודת כיול"
-                                    className="max-w-full h-auto mx-auto rounded"
-                                />
+                                <div className="p-4 overflow-auto h-full">
+                                    <img 
+                                        src={selectedCertificate} 
+                                        alt="תעודת כיול"
+                                        className="max-w-full h-auto mx-auto rounded"
+                                    />
+                                </div>
                             )}
                         </div>
                     </div>
