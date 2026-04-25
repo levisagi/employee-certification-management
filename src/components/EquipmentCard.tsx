@@ -102,7 +102,7 @@ const EquipmentCard: React.FC<EquipmentCardProps> = ({
 
             {/* Action Buttons */}
             <div className="grid grid-cols-2 gap-2">
-                {equipment.certificate ? (
+                {(equipment.certificate || equipment.hasCertificate) ? (
                     <button
                         onClick={() => onViewCertificate(equipment)}
                         className="flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold text-sm"

@@ -16,6 +16,7 @@ export interface Certification {
     ojt2?: OJT;
     certificate?: string;
     certificateFileName?: string;
+    hasCertificate?: boolean;
 }
 
 export interface Employee {

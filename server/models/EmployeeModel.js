@@ -3,6 +3,8 @@ const db = require('../database');
 class EmployeeModel {
     /**
      * קבלת כל העובדים עם ההסמכות שלהם
+     * ⚡ אופטימיזציה: לא מחזיר את קבצי התעודות (certificate) כדי להאיץ טעינה
+     * קובץ התעודה נטען בנפרד רק כשנדרש דרך /api/employees/:empId/certifications/:certId/file
      */
     static async findAll() {
         const query = `
@@ -32,7 +34,7 @@ class EmployeeModel {
                                 'endDate', c.end_date,
                                 'status', c.status,
                                 'isRequired', c.is_required,
-                                'certificate', c.certificate,
+                                'hasCertificate', c.certificate IS NOT NULL,
                                 'certificateFileName', c.certificate_file_name,
                                 'ojt1', (
                                     SELECT json_build_object('mentor', mentor, 'date', date)
@@ -57,6 +59,23 @@ class EmployeeModel {
         
         const result = await db.query(query);
         return result.rows.map(row => this.formatEmployee(row));
+    }
+
+    /**
+     * קבלת קובץ תעודה בודד של הסמכה ספציפית
+     */
+    static async getCertificateFile(certificationId) {
+        const result = await db.query(
+            'SELECT certificate, certificate_file_name FROM certifications WHERE id = $1',
+            [certificationId]
+        );
+        if (result.rows.length === 0) {
+            return null;
+        }
+        return {
+            certificate: result.rows[0].certificate,
+            certificateFileName: result.rows[0].certificate_file_name
+        };
     }
 
     /**
@@ -183,6 +202,29 @@ class EmployeeModel {
         try {
             await client.query('BEGIN');
             
+            // ⚡ שמירת קבצי התעודות הקיימים לפני המחיקה
+            // (כדי למנוע איבוד קבצים כשהקליינט שולח עדכון בלי התעודות - lazy loading)
+            const existingCerts = await client.query(
+                `SELECT id, name, certificate, certificate_file_name 
+                 FROM certifications WHERE employee_id = $1`,
+                [id]
+            );
+            const existingCertsMap = new Map();
+            existingCerts.rows.forEach(row => {
+                existingCertsMap.set(row.id, {
+                    certificate: row.certificate,
+                    certificateFileName: row.certificate_file_name
+                });
+            });
+            // גם לפי שם (במידה ואין _id)
+            const existingCertsByName = new Map();
+            existingCerts.rows.forEach(row => {
+                existingCertsByName.set(row.name, {
+                    certificate: row.certificate,
+                    certificateFileName: row.certificate_file_name
+                });
+            });
+            
             // עדכון פרטי העובד
             const employeeQuery = `
                 UPDATE employees
@@ -215,9 +257,22 @@ class EmployeeModel {
             // מחיקת כל ההסמכות הקיימות
             await client.query('DELETE FROM certifications WHERE employee_id = $1', [id]);
             
-            // הוספת ההסמכות המעודכנות
+            // הוספת ההסמכות המעודכנות - עם שחזור תעודות קיימות אם נדרש
             if (employeeData.certifications && employeeData.certifications.length > 0) {
                 for (const cert of employeeData.certifications) {
+                    // אם אין certificate בקליינט - ננסה לשחזר את הקיים
+                    if (!cert.certificate) {
+                        let existingFile = null;
+                        if (cert._id && existingCertsMap.has(cert._id)) {
+                            existingFile = existingCertsMap.get(cert._id);
+                        } else if (existingCertsByName.has(cert.name)) {
+                            existingFile = existingCertsByName.get(cert.name);
+                        }
+                        if (existingFile && existingFile.certificate) {
+                            cert.certificate = existingFile.certificate;
+                            cert.certificateFileName = cert.certificateFileName || existingFile.certificateFileName;
+                        }
+                    }
                     await this.addCertification(client, id, cert);
                 }
             }

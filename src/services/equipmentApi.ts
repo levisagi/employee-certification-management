@@ -35,6 +35,18 @@ export const fetchEquipmentById = async (id: string): Promise<Equipment> => {
     }
 };
 
+// ⚡ טעינת קובץ תעודה - נקרא רק בעת הצורך (lazy loading)
+export const fetchEquipmentCertificate = async (id: string): Promise<string> => {
+    try {
+        const response = await fetch(`${API_URL}/equipment/${id}/certificate`);
+        const data = await handleResponse(response);
+        return data.certificate;
+    } catch (error) {
+        console.error('Error fetching equipment certificate:', error);
+        throw error;
+    }
+};
+
 // יצירת ציוד חדש
 export const createEquipment = async (equipment: Equipment): Promise<Equipment> => {
     try {

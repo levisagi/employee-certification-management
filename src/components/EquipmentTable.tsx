@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Edit2, Trash2, FileText } from 'lucide-react';
 import { Equipment, calculateEquipmentStatus, getStatusColor, getStatusText } from '../models/equipment';
+import { fetchEquipmentCertificate } from '../services/equipmentApi';
 
 interface EquipmentTableProps {
     equipment: Equipment[];
@@ -10,6 +11,25 @@ interface EquipmentTableProps {
 
 const EquipmentTable: React.FC<EquipmentTableProps> = ({ equipment, onEdit, onDelete }) => {
     const [selectedCertificate, setSelectedCertificate] = useState<string | null>(null);
+    const [loadingCertificate, setLoadingCertificate] = useState(false);
+    
+    const handleViewCertificate = async (eq: Equipment) => {
+        if (!eq._id) return;
+        if (eq.certificate) {
+            setSelectedCertificate(eq.certificate);
+            return;
+        }
+        setLoadingCertificate(true);
+        try {
+            const cert = await fetchEquipmentCertificate(eq._id);
+            setSelectedCertificate(cert);
+        } catch (err) {
+            console.error('Error loading certificate:', err);
+            alert('שגיאה בטעינת התעודה');
+        } finally {
+            setLoadingCertificate(false);
+        }
+    };
 
     // עדכון סטטוס לכל ציוד
     const equipmentWithStatus = equipment.map(eq => ({
@@ -108,11 +128,11 @@ const EquipmentTable: React.FC<EquipmentTableProps> = ({ equipment, onEdit, onDe
                                         {/* פעולות */}
                                         <td className="px-4 py-3 whitespace-nowrap text-center" onClick={(e) => e.stopPropagation()}>
                                             <div className="flex items-center justify-center gap-2">
-                                                {eq.certificate && (
+                                                {(eq.certificate || eq.hasCertificate) && (
                                                     <button
                                                         onClick={(e) => {
                                                             e.stopPropagation();
-                                                            setSelectedCertificate(eq.certificate!);
+                                                            handleViewCertificate(eq);
                                                         }}
                                                         className="text-green-600 hover:text-green-800 transition-colors p-1 hover:bg-green-50 rounded"
                                                         title="צפה בתעודה"
@@ -151,6 +171,16 @@ const EquipmentTable: React.FC<EquipmentTableProps> = ({ equipment, onEdit, onDe
                     </table>
                 </div>
             </div>
+
+            {/* Loading אינדיקטור לטעינת תעודה */}
+            {loadingCertificate && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 flex flex-col items-center gap-3">
+                        <div className="animate-spin h-10 w-10 border-4 border-blue-600 border-t-transparent rounded-full"></div>
+                        <p className="text-gray-700 font-semibold">טוען תעודה...</p>
+                    </div>
+                </div>
+            )}
 
             {/* Modal להצגת תעודה */}
             {selectedCertificate && (

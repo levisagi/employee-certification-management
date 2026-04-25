@@ -9,7 +9,8 @@ import {
     fetchEquipment, 
     createEquipment, 
     updateEquipment, 
-    deleteEquipment 
+    deleteEquipment,
+    fetchEquipmentCertificate
 } from '../services/equipmentApi';
 
 interface EquipmentManagerProps {
@@ -37,9 +38,37 @@ const EquipmentManager: React.FC<EquipmentManagerProps> = ({ onBackToHome }) => 
     
     // הצגת תעודה
     const [selectedCertificate, setSelectedCertificate] = useState<string | null>(null);
+    const [loadingCertificate, setLoadingCertificate] = useState(false);
     
     // דוחות
     const [showReportsModal, setShowReportsModal] = useState(false);
+    
+    // ⚡ טעינת תעודה בעת הצורך (lazy loading)
+    const handleViewCertificate = async (equipmentItem: Equipment) => {
+        if (!equipmentItem._id) return;
+        
+        // אם התעודה כבר נטענה במטמון - השתמש בה
+        if (equipmentItem.certificate) {
+            setSelectedCertificate(equipmentItem.certificate);
+            return;
+        }
+        
+        setLoadingCertificate(true);
+        try {
+            const certificate = await fetchEquipmentCertificate(equipmentItem._id);
+            setSelectedCertificate(certificate);
+            
+            // שמירה במטמון מקומי למניעת טעינות חוזרות
+            setEquipment(prev => prev.map(eq => 
+                eq._id === equipmentItem._id ? { ...eq, certificate } : eq
+            ));
+        } catch (error) {
+            console.error('Error loading certificate:', error);
+            alert('שגיאה בטעינת התעודה');
+        } finally {
+            setLoadingCertificate(false);
+        }
+    };
 
     // טעינת נתונים מהשרת
     useEffect(() => {
@@ -716,9 +745,7 @@ ${itemsList}
                                     setShowForm(true);
                                 }}
                                 onViewCertificate={(equipment) => {
-                                    if (equipment.certificate) {
-                                        setSelectedCertificate(equipment.certificate);
-                                    }
+                                    handleViewCertificate(equipment);
                                 }}
                                 onUploadCertificate={async (equipment, file) => {
                                     // דחיסת התמונה והעלאה ישירה
@@ -1067,6 +1094,16 @@ ${itemsList}
                             <p className="font-bold text-lg">{toastMessage}</p>
                             <p className="text-sm text-green-100">הפריטים נוספו בהצלחה</p>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Loading אינדיקטור לטעינת תעודה */}
+            {loadingCertificate && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 flex flex-col items-center gap-3">
+                        <div className="animate-spin h-10 w-10 border-4 border-blue-600 border-t-transparent rounded-full"></div>
+                        <p className="text-gray-700 font-semibold">טוען תעודה...</p>
                     </div>
                 </div>
             )}

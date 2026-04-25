@@ -53,6 +53,20 @@ app.get('/api/employees/:id', async (req, res) => {
     }
 });
 
+// ⚡ קבלת קובץ תעודה בודד של הסמכה (נטען רק בעת צפייה)
+app.get('/api/certifications/:certId/file', async (req, res) => {
+    try {
+        const fileData = await EmployeeModel.getCertificateFile(req.params.certId);
+        if (!fileData || !fileData.certificate) {
+            return res.status(404).json({ message: 'Certificate file not found' });
+        }
+        res.json(fileData);
+    } catch (error) {
+        console.error('Error fetching certificate file:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
 app.post('/api/employees', async (req, res) => {
     try {
         const employeeData = req.body;
@@ -320,6 +334,20 @@ app.get('/api/equipment/:id', async (req, res) => {
         res.json(equipment);
     } catch (error) {
         console.error('Error fetching equipment:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// ⚡ קבלת קובץ תעודה של ציוד ספציפי (נטען רק בעת צפייה)
+app.get('/api/equipment/:id/certificate', async (req, res) => {
+    try {
+        const certificate = await EquipmentModel.getCertificate(req.params.id);
+        if (!certificate) {
+            return res.status(404).json({ message: 'Certificate not found' });
+        }
+        res.json({ certificate });
+    } catch (error) {
+        console.error('Error fetching equipment certificate:', error);
         res.status(500).json({ message: error.message });
     }
 });

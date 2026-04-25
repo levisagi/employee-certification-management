@@ -14,6 +14,17 @@ export const fetchEmployees = async (): Promise<Employee[]> => {
     return response.json();
 };
 
+/**
+ * ⚡ טעינת קובץ תעודה בודדת - נקרא רק בעת הצורך (lazy loading)
+ */
+export const fetchCertificateFile = async (certificationId: string): Promise<{ certificate: string; certificateFileName?: string }> => {
+    const response = await fetch(`${API_URL}/certifications/${certificationId}/file`);
+    if (!response.ok) {
+        throw new Error('Failed to fetch certificate file');
+    }
+    return response.json();
+};
+
 export const createEmployee = async (employee: Employee): Promise<Employee> => {
     const response = await fetch(`${API_URL}/employees`, {
         method: 'POST',

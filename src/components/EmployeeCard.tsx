@@ -2,6 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Employee, Certification } from '../models/employee';
 import ExperienceBar from './ExperienceBar';
 import { Users, FileText, ChevronRight, ChevronLeft, ClipboardCopy, GripVertical } from 'lucide-react';
+import { fetchCertificateFile } from '../services/api';
 
 interface EmployeeCardProps {
     employee: Employee;
@@ -14,6 +15,7 @@ interface EmployeeCardProps {
 const EmployeeCard = ({ employee, onEdit, onDelete, onCopyCertifications, dragHandleProps }: EmployeeCardProps) => {
     const [selectedCertificate, setSelectedCertificate] = useState<string | null>(null);
     const [selectedCertName, setSelectedCertName] = useState<string>('');
+    const [loadingCertificate, setLoadingCertificate] = useState(false);
     const [certPage, setCertPage] = useState(0);
     const [isAnimating, setIsAnimating] = useState(false);
     const certsPerPage = 3;
@@ -80,10 +82,29 @@ const EmployeeCard = ({ employee, onEdit, onDelete, onCopyCertifications, dragHa
         return '#EF4444'; // אדום
     };
 
-    const handleShowCertificate = (cert: Certification) => {
+    const handleShowCertificate = async (cert: Certification) => {
+        setSelectedCertName(cert.name);
+        
+        // אם התעודה כבר נטענה במטמון
         if (cert.certificate) {
             setSelectedCertificate(cert.certificate);
-            setSelectedCertName(cert.name);
+            return;
+        }
+        
+        // טעינה אונ-דימנד (רק אם יש תעודה אבל עוד לא נטענה)
+        if (cert.hasCertificate && cert._id) {
+            setLoadingCertificate(true);
+            try {
+                const data = await fetchCertificateFile(cert._id);
+                setSelectedCertificate(data.certificate);
+                // שמור במטמון
+                cert.certificate = data.certificate;
+            } catch (err) {
+                console.error('Error loading certificate:', err);
+                alert('שגיאה בטעינת התעודה');
+            } finally {
+                setLoadingCertificate(false);
+            }
         }
     };
 
@@ -392,7 +413,7 @@ const EmployeeCard = ({ employee, onEdit, onDelete, onCopyCertifications, dragHa
                                                     </div>
                                                     <div className="flex items-center gap-1">
                                                         <span className="text-gray-400">{formatDate(cert.expiryDate)}</span>
-                                                        {cert.certificate && (
+                                                        {(cert.certificate || cert.hasCertificate) && (
                                                             <button
                                                                 onClick={() => handleShowCertificate(cert)}
                                                                 className="text-blue-400 hover:text-blue-300"
@@ -452,6 +473,16 @@ const EmployeeCard = ({ employee, onEdit, onDelete, onCopyCertifications, dragHa
                 </div>
             </div>
             
+            {/* Loading אינדיקטור לטעינת תעודה */}
+            {loadingCertificate && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 flex flex-col items-center gap-3">
+                        <div className="animate-spin h-10 w-10 border-4 border-blue-600 border-t-transparent rounded-full"></div>
+                        <p className="text-gray-700 font-semibold">טוען תעודה...</p>
+                    </div>
+                </div>
+            )}
+
             {/* Modal להצגת התעודה */}
             {selectedCertificate && (
                 <div 

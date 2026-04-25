@@ -2,6 +2,8 @@ const db = require('../database');
 
 class EquipmentModel {
     // קבלת כל הציוד
+    // ⚡ אופטימיזציה: לא מחזיר את קובץ התעודה (certificate) כדי להאיץ טעינה
+    // קובץ התעודה נטען בנפרד רק כשנדרש דרך /api/equipment/:id/certificate
     static async getAll() {
         const result = await db.query(
             `SELECT 
@@ -14,7 +16,7 @@ class EquipmentModel {
                 category,
                 location,
                 notes,
-                certificate,
+                (certificate IS NOT NULL) as "hasCertificate",
                 display_order as "displayOrder",
                 created_at as "createdAt",
                 updated_at as "updatedAt"
@@ -22,6 +24,18 @@ class EquipmentModel {
             ORDER BY display_order, name`
         );
         return result.rows;
+    }
+
+    // קבלת קובץ תעודה בודד של ציוד ספציפי
+    static async getCertificate(id) {
+        const result = await db.query(
+            'SELECT certificate FROM equipment WHERE id = $1',
+            [id]
+        );
+        if (result.rows.length === 0) {
+            return null;
+        }
+        return result.rows[0].certificate;
     }
 
     // קבלת ציוד לפי ID
@@ -95,6 +109,7 @@ class EquipmentModel {
     }
 
     // עדכון ציוד
+    // ⚡ שימוש ב-COALESCE כבר מגן מפני איבוד התעודה כשלא נשלחת
     static async update(id, equipmentData) {
         const {
             name,
@@ -133,7 +148,7 @@ class EquipmentModel {
                 category,
                 location,
                 notes,
-                certificate,
+                (certificate IS NOT NULL) as "hasCertificate",
                 display_order as "displayOrder"`,
             [name, serialNumber, company, lastCalibrationDate, nextCalibrationDate,
              category, location, notes, certificate, displayOrder, id]

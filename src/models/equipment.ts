@@ -6,7 +6,8 @@ export interface Equipment {
     lastCalibrationDate: string;       // תאריך כיול אחרון
     nextCalibrationDate: string;       // תאריך כיול הבא
     status?: 'valid' | 'expiring' | 'expired';  // סטטוס (מחושב אוטומטית)
-    certificate?: string;              // תעודת כיול (PDF/תמונה)
+    certificate?: string;              // תעודת כיול (PDF/תמונה) - נטען בעת הצורך
+    hasCertificate?: boolean;          // האם יש תעודה (להצגה מהירה)
     category?: string;                 // קטגוריה
     location?: string;                 // מיקום
     notes?: string;                    // הערות
