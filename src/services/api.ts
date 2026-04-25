@@ -18,9 +18,13 @@ export const fetchEmployees = async (): Promise<Employee[]> => {
  * ⚡ טעינת קובץ תעודה בודדת - נקרא רק בעת הצורך (lazy loading)
  */
 export const fetchCertificateFile = async (certificationId: string): Promise<{ certificate: string; certificateFileName?: string }> => {
-    const response = await fetch(`${API_URL}/certifications/${certificationId}/file`);
+    const url = `${API_URL}/certifications/${certificationId}/file`;
+    console.log('Fetching certificate from:', url);
+    const response = await fetch(url);
     if (!response.ok) {
-        throw new Error('Failed to fetch certificate file');
+        const errorText = await response.text();
+        console.error('Certificate fetch failed:', response.status, errorText);
+        throw new Error(`Failed to fetch certificate file: ${response.status} - ${errorText}`);
     }
     return response.json();
 };

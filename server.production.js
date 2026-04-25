@@ -47,6 +47,34 @@ app.get('/api/employees', async (req, res) => {
     }
 });
 
+// קבלת עובד בודד לפי מזהה
+app.get('/api/employees/:id', async (req, res) => {
+    try {
+        const employee = await EmployeeModel.findById(req.params.id);
+        if (!employee) {
+            return res.status(404).json({ message: 'Employee not found' });
+        }
+        res.json(employee);
+    } catch (error) {
+        console.error('Error fetching employee:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// ⚡ קבלת קובץ תעודה בודד של הסמכה (נטען רק בעת צפייה)
+app.get('/api/certifications/:certId/file', async (req, res) => {
+    try {
+        const fileData = await EmployeeModel.getCertificateFile(req.params.certId);
+        if (!fileData || !fileData.certificate) {
+            return res.status(404).json({ message: 'Certificate file not found' });
+        }
+        res.json(fileData);
+    } catch (error) {
+        console.error('Error fetching certificate file:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
 app.post('/api/employees', async (req, res) => {
     try {
         const newEmployee = await EmployeeModel.create(req.body);
@@ -110,6 +138,34 @@ app.get('/api/equipment', async (req, res) => {
     } catch (error) {
         console.error('Error fetching equipment:', error);
         res.status(500).json({ message: 'Error fetching equipment', error: error.message });
+    }
+});
+
+// קבלת ציוד בודד לפי מזהה
+app.get('/api/equipment/:id', async (req, res) => {
+    try {
+        const equipment = await EquipmentModel.getById(req.params.id);
+        if (!equipment) {
+            return res.status(404).json({ message: 'Equipment not found' });
+        }
+        res.json(equipment);
+    } catch (error) {
+        console.error('Error fetching equipment:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// ⚡ קבלת קובץ תעודה של ציוד ספציפי (נטען רק בעת צפייה)
+app.get('/api/equipment/:id/certificate', async (req, res) => {
+    try {
+        const certificate = await EquipmentModel.getCertificate(req.params.id);
+        if (!certificate) {
+            return res.status(404).json({ message: 'Certificate not found' });
+        }
+        res.json({ certificate });
+    } catch (error) {
+        console.error('Error fetching equipment certificate:', error);
+        res.status(500).json({ message: error.message });
     }
 });
 
