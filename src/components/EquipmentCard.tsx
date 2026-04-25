@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { Edit2, FileText, ShoppingCart, Camera } from 'lucide-react';
+import { Edit2, FileText, FileX, ShoppingCart, Camera } from 'lucide-react';
 import { Equipment, calculateEquipmentStatus } from '../models/equipment';
 
 interface EquipmentCardProps {
@@ -7,6 +7,7 @@ interface EquipmentCardProps {
     onEdit: (equipment: Equipment) => void;
     onViewCertificate: (equipment: Equipment) => void;
     onUploadCertificate: (equipment: Equipment, file: File) => void;
+    onRemoveCertificate?: (equipment: Equipment) => void;
     onAddToCart?: (equipment: Equipment) => void;
 }
 
@@ -15,6 +16,7 @@ const EquipmentCard: React.FC<EquipmentCardProps> = ({
     onEdit, 
     onViewCertificate,
     onUploadCertificate,
+    onRemoveCertificate,
     onAddToCart 
 }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -103,13 +105,24 @@ const EquipmentCard: React.FC<EquipmentCardProps> = ({
             {/* Action Buttons */}
             <div className="grid grid-cols-2 gap-2">
                 {(equipment.certificate || equipment.hasCertificate) ? (
-                    <button
-                        onClick={() => onViewCertificate(equipment)}
-                        className="flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold text-sm"
-                    >
-                        <FileText size={18} />
-                        הצג תעודה
-                    </button>
+                    <div className="flex gap-1">
+                        <button
+                            onClick={() => onViewCertificate(equipment)}
+                            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold text-sm"
+                        >
+                            <FileText size={18} />
+                            הצג תעודה
+                        </button>
+                        {onRemoveCertificate && (
+                            <button
+                                onClick={() => onRemoveCertificate(equipment)}
+                                className="flex items-center justify-center px-3 py-2.5 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+                                title="הסר תעודה"
+                            >
+                                <FileX size={18} />
+                            </button>
+                        )}
+                    </div>
                 ) : (
                     <>
                         <input

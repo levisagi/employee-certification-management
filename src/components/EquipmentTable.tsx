@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Edit2, Trash2, FileText } from 'lucide-react';
+import { Edit2, Trash2, FileText, FileX } from 'lucide-react';
 import { Equipment, calculateEquipmentStatus, getStatusColor, getStatusText } from '../models/equipment';
 import { fetchEquipmentCertificate } from '../services/equipmentApi';
 
@@ -7,9 +7,10 @@ interface EquipmentTableProps {
     equipment: Equipment[];
     onEdit: (equipment: Equipment) => void;
     onDelete: (id: string) => void;
+    onRemoveCertificate?: (equipment: Equipment) => void;
 }
 
-const EquipmentTable: React.FC<EquipmentTableProps> = ({ equipment, onEdit, onDelete }) => {
+const EquipmentTable: React.FC<EquipmentTableProps> = ({ equipment, onEdit, onDelete, onRemoveCertificate }) => {
     const [selectedCertificate, setSelectedCertificate] = useState<string | null>(null);
     const [loadingCertificate, setLoadingCertificate] = useState(false);
     
@@ -129,16 +130,30 @@ const EquipmentTable: React.FC<EquipmentTableProps> = ({ equipment, onEdit, onDe
                                         <td className="px-4 py-3 whitespace-nowrap text-center" onClick={(e) => e.stopPropagation()}>
                                             <div className="flex items-center justify-center gap-2">
                                                 {(eq.certificate || eq.hasCertificate) && (
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleViewCertificate(eq);
-                                                        }}
-                                                        className="text-green-600 hover:text-green-800 transition-colors p-1 hover:bg-green-50 rounded"
-                                                        title="צפה בתעודה"
-                                                    >
-                                                        <FileText size={16} />
-                                                    </button>
+                                                    <>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleViewCertificate(eq);
+                                                            }}
+                                                            className="text-green-600 hover:text-green-800 transition-colors p-1 hover:bg-green-50 rounded"
+                                                            title="צפה בתעודה"
+                                                        >
+                                                            <FileText size={16} />
+                                                        </button>
+                                                        {onRemoveCertificate && (
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    onRemoveCertificate(eq);
+                                                                }}
+                                                                className="text-orange-600 hover:text-orange-800 transition-colors p-1 hover:bg-orange-50 rounded"
+                                                                title="הסר תעודה"
+                                                            >
+                                                                <FileX size={16} />
+                                                            </button>
+                                                        )}
+                                                    </>
                                                 )}
                                                 <button
                                                     onClick={(e) => {

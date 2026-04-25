@@ -124,6 +124,25 @@ const EquipmentManager: React.FC<EquipmentManagerProps> = ({ onBackToHome }) => 
         }
     };
 
+    // ⚡ הסרת תעודה בלבד (ללא מחיקת הציוד)
+    const handleRemoveCertificate = async (equipmentItem: Equipment) => {
+        if (!equipmentItem._id) return;
+        if (!window.confirm(`האם להסיר את התעודה של ${equipmentItem.name}?`)) return;
+
+        try {
+            // שליחת null בשדה certificate כדי למחוק אותו בשרת
+            const payload: any = { ...equipmentItem, certificate: null };
+            const updated = await updateEquipment(equipmentItem._id, payload);
+            setEquipment(prev => prev.map(eq =>
+                eq._id === equipmentItem._id
+                    ? { ...updated, certificate: undefined, hasCertificate: false }
+                    : eq
+            ));
+        } catch (err: any) {
+            alert(`שגיאה בהסרת התעודה: ${err.message}`);
+        }
+    };
+
     // פונקציות סל כיול
     const toggleItemSelection = (equipmentId: string) => {
         const newSelected = new Set(selectedItems);
@@ -725,6 +744,7 @@ ${itemsList}
                             setShowForm(true);
                         }}
                         onDelete={handleDeleteEquipment}
+                        onRemoveCertificate={handleRemoveCertificate}
                     />
                 </div>
 
@@ -747,6 +767,7 @@ ${itemsList}
                                 onViewCertificate={(equipment) => {
                                     handleViewCertificate(equipment);
                                 }}
+                                onRemoveCertificate={handleRemoveCertificate}
                                 onUploadCertificate={async (equipment, file) => {
                                     // דחיסת התמונה והעלאה ישירה
                                     try {
