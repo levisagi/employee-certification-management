@@ -37,6 +37,10 @@ const EquipmentForm: React.FC<EquipmentFormProps> = ({ onSubmit, initialData, on
         _id: initialData?._id,
     });
 
+    // ⚡ מעקב אחר שינוי התעודה - כדי לא לדרוס תעודה קיימת בעדכון (lazy loading)
+    const [certificateChanged, setCertificateChanged] = useState(false);
+    const hasExistingCertificate = !!(initialData?.hasCertificate || initialData?.certificate);
+
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -98,6 +102,7 @@ const EquipmentForm: React.FC<EquipmentFormProps> = ({ onSubmit, initialData, on
                     ...prev,
                     certificate: base64String
                 }));
+                setCertificateChanged(true);
             } catch (error) {
                 console.error('Error processing certificate:', error);
                 alert('שגיאה בעיבוד הקובץ');
@@ -110,6 +115,7 @@ const EquipmentForm: React.FC<EquipmentFormProps> = ({ onSubmit, initialData, on
             ...prev,
             certificate: ''
         }));
+        setCertificateChanged(true);
         if (fileInputRef.current) {
             fileInputRef.current.value = '';
         }
@@ -136,7 +142,14 @@ const EquipmentForm: React.FC<EquipmentFormProps> = ({ onSubmit, initialData, on
             return;
         }
 
-        onSubmit(formData);
+        // ⚡ אם עורכים ציוד קיים והמשתמש לא שינה את התעודה - לא שולחים אותה כלל
+        // זה מונע דריסה של התעודה הקיימת במסד הנתונים (lazy loading)
+        const dataToSubmit: Equipment = { ...formData };
+        if (initialData && !certificateChanged) {
+            delete dataToSubmit.certificate;
+        }
+
+        onSubmit(dataToSubmit);
     };
 
     return (
@@ -256,11 +269,13 @@ const EquipmentForm: React.FC<EquipmentFormProps> = ({ onSubmit, initialData, on
                     תעודת כיול
                 </label>
                 
-                {formData.certificate ? (
+                {formData.certificate || (hasExistingCertificate && !certificateChanged) ? (
                     <div className="flex items-center gap-3">
                         <div className="flex items-center gap-2 px-4 py-2 bg-green-50 border border-green-300 rounded-lg">
                             <FileText size={20} className="text-green-600" />
-                            <span className="text-sm text-green-700">תעודה הועלתה</span>
+                            <span className="text-sm text-green-700">
+                                {formData.certificate ? 'תעודה הועלתה' : 'תעודה קיימת'}
+                            </span>
                         </div>
                         <button
                             type="button"

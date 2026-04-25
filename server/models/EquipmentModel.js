@@ -16,7 +16,7 @@ class EquipmentModel {
                 category,
                 location,
                 notes,
-                (certificate IS NOT NULL) as "hasCertificate",
+                (certificate IS NOT NULL AND certificate != '') as "hasCertificate",
                 display_order as "displayOrder",
                 created_at as "createdAt",
                 updated_at as "updatedAt"
@@ -35,7 +35,9 @@ class EquipmentModel {
         if (result.rows.length === 0) {
             return null;
         }
-        return result.rows[0].certificate;
+        // מחרוזת ריקה נחשבת כאין תעודה
+        const cert = result.rows[0].certificate;
+        return cert && cert.length > 0 ? cert : null;
     }
 
     // קבלת ציוד לפי ID
@@ -51,7 +53,7 @@ class EquipmentModel {
                 category,
                 location,
                 notes,
-                image,
+                (certificate IS NOT NULL AND certificate != '') as "hasCertificate",
                 display_order as "displayOrder",
                 created_at as "createdAt",
                 updated_at as "updatedAt"
@@ -77,6 +79,9 @@ class EquipmentModel {
             displayOrder = 0
         } = equipmentData;
 
+        // מחרוזת ריקה נשמרת כ-NULL (אין תעודה)
+        const certValue = certificate && certificate.length > 0 ? certificate : null;
+
         const result = await db.query(
             `INSERT INTO equipment (
                 name, 
@@ -100,44 +105,60 @@ class EquipmentModel {
                 category,
                 location,
                 notes,
-                certificate,
+                (certificate IS NOT NULL AND certificate != '') as "hasCertificate",
                 display_order as "displayOrder"`,
             [name, serialNumber, company, lastCalibrationDate, nextCalibrationDate, 
-             category, location, notes, certificate, displayOrder]
+             category, location, notes, certValue, displayOrder]
         );
         return result.rows[0];
     }
 
     // עדכון ציוד
-    // ⚡ שימוש ב-COALESCE כבר מגן מפני איבוד התעודה כשלא נשלחת
+    // ⚡ עדכון דינמי: מעדכן רק שדות שנשלחים בבקשה. שדה certificate מעודכן רק אם נשלח במפורש.
+    // זה מגן מפני דריסת התעודה כשהקליינט משתמש ב-lazy loading ולא שולח את הקובץ המלא.
     static async update(id, equipmentData) {
-        const {
-            name,
-            serialNumber,
-            company,
-            lastCalibrationDate,
-            nextCalibrationDate,
-            category,
-            location,
-            notes,
-            certificate,
-            displayOrder
-        } = equipmentData;
+        const fieldMap = {
+            name: 'name',
+            serialNumber: 'serial_number',
+            company: 'company',
+            lastCalibrationDate: 'last_calibration_date',
+            nextCalibrationDate: 'next_calibration_date',
+            category: 'category',
+            location: 'location',
+            notes: 'notes',
+            certificate: 'certificate',
+            displayOrder: 'display_order'
+        };
 
-        const result = await db.query(
-            `UPDATE equipment SET
-                name = COALESCE($1, name),
-                serial_number = COALESCE($2, serial_number),
-                company = COALESCE($3, company),
-                last_calibration_date = COALESCE($4, last_calibration_date),
-                next_calibration_date = COALESCE($5, next_calibration_date),
-                category = COALESCE($6, category),
-                location = COALESCE($7, location),
-                notes = COALESCE($8, notes),
-                certificate = COALESCE($9, certificate),
-                display_order = COALESCE($10, display_order),
-                updated_at = CURRENT_TIMESTAMP
-            WHERE id = $11
+        const sets = [];
+        const values = [];
+        let idx = 1;
+
+        for (const [key, column] of Object.entries(fieldMap)) {
+            if (key in equipmentData) {
+                let value = equipmentData[key];
+                // מחרוזת ריקה בתעודה נחשבת כהסרת התעודה (NULL)
+                if (key === 'certificate' && value === '') {
+                    value = null;
+                }
+                sets.push(`${column} = $${idx}`);
+                values.push(value);
+                idx++;
+            }
+        }
+
+        // אם אין שדות לעדכן, החזר את הנתונים הקיימים
+        if (sets.length === 0) {
+            return await EquipmentModel.getById(id);
+        }
+
+        sets.push(`updated_at = CURRENT_TIMESTAMP`);
+        values.push(id);
+
+        const query = `
+            UPDATE equipment SET
+                ${sets.join(', ')}
+            WHERE id = $${idx}
             RETURNING 
                 id as _id,
                 name,
@@ -148,11 +169,11 @@ class EquipmentModel {
                 category,
                 location,
                 notes,
-                (certificate IS NOT NULL) as "hasCertificate",
-                display_order as "displayOrder"`,
-            [name, serialNumber, company, lastCalibrationDate, nextCalibrationDate,
-             category, location, notes, certificate, displayOrder, id]
-        );
+                (certificate IS NOT NULL AND certificate != '') as "hasCertificate",
+                display_order as "displayOrder"
+        `;
+
+        const result = await db.query(query, values);
         return result.rows[0];
     }
 
@@ -199,7 +220,7 @@ class EquipmentModel {
                 category,
                 location,
                 notes,
-                image,
+                (certificate IS NOT NULL AND certificate != '') as "hasCertificate",
                 display_order as "displayOrder"
             FROM equipment 
             WHERE 
