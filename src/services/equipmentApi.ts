@@ -7,8 +7,21 @@ const API_URL = process.env.NODE_ENV === 'production'
 // טיפול בשגיאות
 const handleResponse = async (response: Response) => {
     if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Something went wrong');
+        let errorMessage = `HTTP ${response.status}`;
+        try {
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+                const error = await response.json();
+                errorMessage = error.message || errorMessage;
+            } else {
+                const text = await response.text();
+                errorMessage = `${errorMessage}: ${text.substring(0, 200)}`;
+            }
+        } catch (e) {
+            // ignore parsing errors
+        }
+        console.error('API response error:', response.status, response.url, errorMessage);
+        throw new Error(errorMessage);
     }
     return response.json();
 };
@@ -38,8 +51,13 @@ export const fetchEquipmentById = async (id: string): Promise<Equipment> => {
 // ⚡ טעינת קובץ תעודה - נקרא רק בעת הצורך (lazy loading)
 export const fetchEquipmentCertificate = async (id: string): Promise<string> => {
     try {
-        const response = await fetch(`${API_URL}/equipment/${id}/certificate`);
+        const url = `${API_URL}/equipment/${id}/certificate`;
+        console.log('Fetching equipment certificate from:', url);
+        const response = await fetch(url);
         const data = await handleResponse(response);
+        if (!data.certificate) {
+            throw new Error('Certificate data is empty');
+        }
         return data.certificate;
     } catch (error) {
         console.error('Error fetching equipment certificate:', error);
