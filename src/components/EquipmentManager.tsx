@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Filter, AlertCircle, CheckCircle, Clock, ShoppingCart, Printer, FileText } from 'lucide-react';
+import { Plus, Search, Filter, AlertCircle, CheckCircle, Clock, ShoppingCart, Printer, FileText, Wrench, EyeOff } from 'lucide-react';
 import EquipmentTable from './EquipmentTable';
 import EquipmentCard from './EquipmentCard';
 import EquipmentForm from './EquipmentForm';
-import { Equipment, calculateEquipmentStatus } from '../models/equipment';
+import { Equipment, calculateEquipmentStatus, calculateDateStatus, countsTowardAlerts } from '../models/equipment';
 import { APP_VERSION } from '../version';
 import { 
     fetchEquipment, 
@@ -22,12 +22,12 @@ const EquipmentManager: React.FC<EquipmentManagerProps> = ({ onBackToHome }) => 
     const [showForm, setShowForm] = useState(false);
     const [editingEquipment, setEditingEquipment] = useState<Equipment | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
-    const [statusFilter, setStatusFilter] = useState<'all' | 'valid' | 'expiring' | 'expired'>('all');
+    const [statusFilter, setStatusFilter] = useState<'all' | 'valid' | 'expiring' | 'expired' | 'in-calibration' | 'not-required'>('all');
     const [categoryFilter, setCategoryFilter] = useState<string>('all');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [showStatusModal, setShowStatusModal] = useState(false);
-    const [modalStatus, setModalStatus] = useState<'valid' | 'expiring' | 'expired' | null>(null);
+    const [modalStatus, setModalStatus] = useState<'valid' | 'expiring' | 'expired' | 'in-calibration' | 'not-required' | null>(null);
     
     // סל כיול
     const [calibrationCart, setCalibrationCart] = useState<Equipment[]>([]);
@@ -220,19 +220,21 @@ ${itemsList}
 
         const currentDate = new Date().toLocaleDateString('he-IL');
         
-        // סינון ציוד לפי סטטוס
-        let reportEquipment = equipment;
+        // סינון ציוד לפי סטטוס (תאריך + ללא דגלי מעקב/בכיול)
+        let reportEquipment = equipment.filter(countsTowardAlerts);
         let reportTitle = 'דוח כל הציוד';
         
         if (reportStatus !== 'all') {
-            reportEquipment = equipment.filter(eq => calculateEquipmentStatus(eq.nextCalibrationDate) === reportStatus);
+            reportEquipment = reportEquipment.filter(eq => calculateDateStatus(eq.nextCalibrationDate) === reportStatus);
             if (reportStatus === 'valid') reportTitle = 'דוח ציוד בכיול תקף';
             if (reportStatus === 'expiring') reportTitle = 'דוח ציוד מתקרב לפקיעה';
             if (reportStatus === 'expired') reportTitle = 'דוח ציוד שנדרש כיול';
+        } else {
+            reportEquipment = equipment;
         }
 
         const itemsHTML = reportEquipment.map((eq, index) => {
-            const status = calculateEquipmentStatus(eq.nextCalibrationDate);
+            const status = calculateEquipmentStatus(eq.nextCalibrationDate, eq);
             const nextDate = new Date(eq.nextCalibrationDate);
             const today = new Date();
             const diffTime = nextDate.getTime() - today.getTime();
@@ -240,7 +242,13 @@ ${itemsList}
             
             let statusText = '';
             let statusColor = '';
-            if (status === 'valid') {
+            if (status === 'in-calibration') {
+                statusText = '🔧 בכיול';
+                statusColor = 'color: purple;';
+            } else if (status === 'not-required') {
+                statusText = '○ לא נדרש';
+                statusColor = 'color: gray;';
+            } else if (status === 'valid') {
                 statusText = '✓ תקין';
                 statusColor = 'color: green;';
             } else if (status === 'expiring') {
@@ -466,9 +474,15 @@ ${itemsList}
         printWindow.document.close();
     };
 
+    // התאמת ציוד לסטטוס במודאל/סינון
+    const matchesModalStatus = (eq: Equipment, status: typeof modalStatus) => {
+        if (!status) return false;
+        return calculateEquipmentStatus(eq.nextCalibrationDate, eq) === status;
+    };
+
     // סינון הציוד
     const filteredEquipment = equipment.filter(eq => {
-        const status = calculateEquipmentStatus(eq.nextCalibrationDate);
+        const status = calculateEquipmentStatus(eq.nextCalibrationDate, eq);
         
         // סינון לפי סטטוס
         if (statusFilter !== 'all' && status !== statusFilter) {
@@ -489,12 +503,15 @@ ${itemsList}
         return true;
     });
 
-    // חישוב סטטיסטיקות
+    // חישוב סטטיסטיקות - התראות לא כוללות "לא נדרש כיול" ו"בכיול"
+    const alertable = equipment.filter(countsTowardAlerts);
     const stats = {
         total: equipment.length,
-        valid: equipment.filter(eq => calculateEquipmentStatus(eq.nextCalibrationDate) === 'valid').length,
-        expiring: equipment.filter(eq => calculateEquipmentStatus(eq.nextCalibrationDate) === 'expiring').length,
-        expired: equipment.filter(eq => calculateEquipmentStatus(eq.nextCalibrationDate) === 'expired').length,
+        valid: alertable.filter(eq => calculateDateStatus(eq.nextCalibrationDate) === 'valid').length,
+        expiring: alertable.filter(eq => calculateDateStatus(eq.nextCalibrationDate) === 'expiring').length,
+        expired: alertable.filter(eq => calculateDateStatus(eq.nextCalibrationDate) === 'expired').length,
+        inCalibration: equipment.filter(eq => eq.inCalibration).length,
+        notRequired: equipment.filter(eq => eq.calibrationNotRequired).length,
     };
 
     // Loading state
@@ -608,14 +625,14 @@ ${itemsList}
 
             <div className="container mx-auto px-4 py-6">
                 {/* סטטיסטיקות */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6">
+                <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 md:gap-4 mb-6">
                     <div className="bg-white rounded-lg shadow-md p-4 border-r-4 border-blue-500">
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-gray-600 text-sm">סך הכל ציוד</p>
                                 <p className="text-2xl font-bold text-gray-800">{stats.total}</p>
                             </div>
-                            <Filter className="text-blue-500" size={32} />
+                            <Filter className="text-blue-500" size={28} />
                         </div>
                     </div>
                     
@@ -631,7 +648,7 @@ ${itemsList}
                                 <p className="text-gray-600 text-sm">כיול בתוקף</p>
                                 <p className="text-2xl font-bold text-green-600">{stats.valid}</p>
                             </div>
-                            <CheckCircle className="text-green-500" size={32} />
+                            <CheckCircle className="text-green-500" size={28} />
                         </div>
                     </button>
                     
@@ -647,7 +664,7 @@ ${itemsList}
                                 <p className="text-gray-600 text-sm">מתקרב לפקיעה</p>
                                 <p className="text-2xl font-bold text-yellow-600">{stats.expiring}</p>
                             </div>
-                            <Clock className="text-yellow-500" size={32} />
+                            <Clock className="text-yellow-500" size={28} />
                         </div>
                     </button>
                     
@@ -663,7 +680,39 @@ ${itemsList}
                                 <p className="text-gray-600 text-sm">נדרש כיול</p>
                                 <p className="text-2xl font-bold text-red-600">{stats.expired}</p>
                             </div>
-                            <AlertCircle className="text-red-500" size={32} />
+                            <AlertCircle className="text-red-500" size={28} />
+                        </div>
+                    </button>
+
+                    <button
+                        onClick={() => {
+                            setModalStatus('in-calibration');
+                            setShowStatusModal(true);
+                        }}
+                        className="bg-white rounded-lg shadow-md p-4 border-r-4 border-purple-500 hover:shadow-lg transition-all cursor-pointer text-right"
+                    >
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-gray-600 text-sm">בכיול כרגע</p>
+                                <p className="text-2xl font-bold text-purple-600">{stats.inCalibration}</p>
+                            </div>
+                            <Wrench className="text-purple-500" size={28} />
+                        </div>
+                    </button>
+
+                    <button
+                        onClick={() => {
+                            setModalStatus('not-required');
+                            setShowStatusModal(true);
+                        }}
+                        className="bg-white rounded-lg shadow-md p-4 border-r-4 border-gray-400 hover:shadow-lg transition-all cursor-pointer text-right"
+                    >
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-gray-600 text-sm">לא נדרש כיול</p>
+                                <p className="text-2xl font-bold text-gray-600">{stats.notRequired}</p>
+                            </div>
+                            <EyeOff className="text-gray-500" size={28} />
                         </div>
                     </button>
                 </div>
@@ -695,6 +744,8 @@ ${itemsList}
                                 <option value="valid">✓ כיול בתוקף</option>
                                 <option value="expiring">⚠ מתקרב לפקיעה</option>
                                 <option value="expired">✗ נדרש כיול</option>
+                                <option value="in-calibration">🔧 בכיול כרגע</option>
+                                <option value="not-required">○ לא נדרש כיול</option>
                             </select>
 
                             {/* כפתור סל כיול */}
@@ -847,6 +898,8 @@ ${itemsList}
                                 {modalStatus === 'valid' && '✓ ציוד בכיול תקף'}
                                 {modalStatus === 'expiring' && '⚠ ציוד מתקרב לפקיעה'}
                                 {modalStatus === 'expired' && '✗ ציוד שנדרש כיול'}
+                                {modalStatus === 'in-calibration' && '🔧 ציוד שנמצא בכיול'}
+                                {modalStatus === 'not-required' && '○ ציוד שלא נדרש כיול'}
                             </h2>
                             <button 
                                 onClick={() => setShowStatusModal(false)}
@@ -857,7 +910,7 @@ ${itemsList}
                         </div>
                         
                         <div className="p-6 overflow-auto max-h-[calc(90vh-80px)]">
-                            {equipment.filter(eq => calculateEquipmentStatus(eq.nextCalibrationDate) === modalStatus).length === 0 ? (
+                            {equipment.filter(eq => matchesModalStatus(eq, modalStatus)).length === 0 ? (
                                 <div className="text-center py-8 text-gray-500">
                                     <p className="text-lg">אין ציוד בקטגוריה זו 🎉</p>
                                 </div>
@@ -889,11 +942,11 @@ ${itemsList}
                                                 <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase">
                                                     <input
                                                         type="checkbox"
-                                                        checked={selectedItems.size === equipment.filter(eq => calculateEquipmentStatus(eq.nextCalibrationDate) === modalStatus).length}
+                                                        checked={selectedItems.size === equipment.filter(eq => matchesModalStatus(eq, modalStatus)).length && selectedItems.size > 0}
                                                         onChange={(e) => {
                                                             if (e.target.checked) {
                                                                 const allIds = equipment
-                                                                    .filter(eq => calculateEquipmentStatus(eq.nextCalibrationDate) === modalStatus)
+                                                                    .filter(eq => matchesModalStatus(eq, modalStatus))
                                                                     .map(eq => eq._id!);
                                                                 setSelectedItems(new Set(allIds));
                                                             } else {
@@ -913,7 +966,7 @@ ${itemsList}
                                         </thead>
                                         <tbody className="bg-white divide-y divide-gray-200">
                                             {equipment
-                                                .filter(eq => calculateEquipmentStatus(eq.nextCalibrationDate) === modalStatus)
+                                                .filter(eq => matchesModalStatus(eq, modalStatus))
                                                 .map((eq) => {
                                                     const nextDate = new Date(eq.nextCalibrationDate);
                                                     const today = new Date();
@@ -1017,7 +1070,7 @@ ${itemsList}
                                         </thead>
                                         <tbody className="bg-white divide-y divide-gray-200">
                                             {calibrationCart.map((eq) => {
-                                                const status = calculateEquipmentStatus(eq.nextCalibrationDate);
+                                                const status = calculateEquipmentStatus(eq.nextCalibrationDate, eq);
                                                 const nextDate = new Date(eq.nextCalibrationDate);
                                                 const today = new Date();
                                                 const diffTime = nextDate.getTime() - today.getTime();
@@ -1033,9 +1086,14 @@ ${itemsList}
                                                         </td>
                                                         <td className="px-4 py-3 text-sm">
                                                             <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                                                                status === 'expired' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'
+                                                                status === 'expired' ? 'bg-red-100 text-red-800' :
+                                                                status === 'in-calibration' ? 'bg-purple-100 text-purple-800' :
+                                                                status === 'not-required' ? 'bg-gray-100 text-gray-700' :
+                                                                'bg-yellow-100 text-yellow-800'
                                                             }`}>
-                                                                {diffDays < 0 ? `${Math.abs(diffDays)} ימים באיחור` : `${diffDays} ימים`}
+                                                                {status === 'in-calibration' ? 'בכיול' :
+                                                                 status === 'not-required' ? 'לא נדרש' :
+                                                                 diffDays < 0 ? `${Math.abs(diffDays)} ימים באיחור` : `${diffDays} ימים`}
                                                             </span>
                                                         </td>
                                                         <td className="px-4 py-3 text-center">

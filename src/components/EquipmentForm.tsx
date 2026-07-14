@@ -34,6 +34,8 @@ const EquipmentForm: React.FC<EquipmentFormProps> = ({ onSubmit, initialData, on
         location: initialData?.location || '',
         notes: initialData?.notes || '',
         certificate: initialData?.certificate || '',
+        inCalibration: initialData?.inCalibration || false,
+        calibrationNotRequired: initialData?.calibrationNotRequired || false,
         _id: initialData?._id,
     });
 
@@ -261,6 +263,52 @@ const EquipmentForm: React.FC<EquipmentFormProps> = ({ onSubmit, initialData, on
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
                     placeholder="הערות נוספות על הציוד..."
                 />
+            </div>
+
+            {/* סטטוסי כיול מיוחדים */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <label className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                    formData.inCalibration
+                        ? 'bg-purple-50 border-purple-400'
+                        : 'bg-gray-50 border-gray-200 hover:border-purple-300'
+                }`}>
+                    <input
+                        type="checkbox"
+                        checked={!!formData.inCalibration}
+                        onChange={(e) => setFormData(prev => ({
+                            ...prev,
+                            inCalibration: e.target.checked,
+                            // לא יכול להיות גם בכיול וגם לא נדרש כיול
+                            calibrationNotRequired: e.target.checked ? false : prev.calibrationNotRequired
+                        }))}
+                        className="mt-1 w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
+                    />
+                    <div>
+                        <span className="block text-sm font-semibold text-gray-800">בכיול כרגע</span>
+                        <span className="block text-xs text-gray-500">יופיע באזור הציוד שבכיול</span>
+                    </div>
+                </label>
+
+                <label className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                    formData.calibrationNotRequired
+                        ? 'bg-gray-100 border-gray-400'
+                        : 'bg-gray-50 border-gray-200 hover:border-gray-400'
+                }`}>
+                    <input
+                        type="checkbox"
+                        checked={!!formData.calibrationNotRequired}
+                        onChange={(e) => setFormData(prev => ({
+                            ...prev,
+                            calibrationNotRequired: e.target.checked,
+                            inCalibration: e.target.checked ? false : prev.inCalibration
+                        }))}
+                        className="mt-1 w-4 h-4 text-gray-600 rounded focus:ring-gray-500"
+                    />
+                    <div>
+                        <span className="block text-sm font-semibold text-gray-800">לא נדרש כיול</span>
+                        <span className="block text-xs text-gray-500">נשאר ברשימה למעקב, ללא התראות</span>
+                    </div>
+                </label>
             </div>
 
             {/* העלאת תעודת כיול */}

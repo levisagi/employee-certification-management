@@ -1,25 +1,43 @@
 const db = require('../database');
 
+// שדות בסיס משותפים להחזרה (ללא certificate מלא)
+const EQUIPMENT_SELECT = `
+    id as _id,
+    name,
+    serial_number as "serialNumber",
+    company,
+    last_calibration_date as "lastCalibrationDate",
+    next_calibration_date as "nextCalibrationDate",
+    category,
+    location,
+    notes,
+    (certificate IS NOT NULL AND certificate != '') as "hasCertificate",
+    COALESCE(in_calibration, false) as "inCalibration",
+    COALESCE(calibration_not_required, false) as "calibrationNotRequired",
+    display_order as "displayOrder",
+    created_at as "createdAt",
+    updated_at as "updatedAt"
+`;
+
 class EquipmentModel {
+    // וידוא שדות חדשים קיימים במסד הנתונים
+    static async ensureSchema() {
+        await db.query(`
+            ALTER TABLE equipment
+            ADD COLUMN IF NOT EXISTS in_calibration BOOLEAN DEFAULT FALSE
+        `);
+        await db.query(`
+            ALTER TABLE equipment
+            ADD COLUMN IF NOT EXISTS calibration_not_required BOOLEAN DEFAULT FALSE
+        `);
+        console.log('✓ Equipment calibration status columns ready');
+    }
+
     // קבלת כל הציוד
     // ⚡ אופטימיזציה: לא מחזיר את קובץ התעודה (certificate) כדי להאיץ טעינה
-    // קובץ התעודה נטען בנפרד רק כשנדרש דרך /api/equipment/:id/certificate
     static async getAll() {
         const result = await db.query(
-            `SELECT 
-                id as _id,
-                name,
-                serial_number as "serialNumber",
-                company,
-                last_calibration_date as "lastCalibrationDate",
-                next_calibration_date as "nextCalibrationDate",
-                category,
-                location,
-                notes,
-                (certificate IS NOT NULL AND certificate != '') as "hasCertificate",
-                display_order as "displayOrder",
-                created_at as "createdAt",
-                updated_at as "updatedAt"
+            `SELECT ${EQUIPMENT_SELECT}
             FROM equipment 
             ORDER BY display_order, name`
         );
@@ -35,7 +53,6 @@ class EquipmentModel {
         if (result.rows.length === 0) {
             return null;
         }
-        // מחרוזת ריקה נחשבת כאין תעודה
         const cert = result.rows[0].certificate;
         return cert && cert.length > 0 ? cert : null;
     }
@@ -43,20 +60,7 @@ class EquipmentModel {
     // קבלת ציוד לפי ID
     static async getById(id) {
         const result = await db.query(
-            `SELECT 
-                id as _id,
-                name,
-                serial_number as "serialNumber",
-                company,
-                last_calibration_date as "lastCalibrationDate",
-                next_calibration_date as "nextCalibrationDate",
-                category,
-                location,
-                notes,
-                (certificate IS NOT NULL AND certificate != '') as "hasCertificate",
-                display_order as "displayOrder",
-                created_at as "createdAt",
-                updated_at as "updatedAt"
+            `SELECT ${EQUIPMENT_SELECT}
             FROM equipment 
             WHERE id = $1`,
             [id]
@@ -76,10 +80,11 @@ class EquipmentModel {
             location,
             notes,
             certificate,
+            inCalibration = false,
+            calibrationNotRequired = false,
             displayOrder = 0
         } = equipmentData;
 
-        // מחרוזת ריקה נשמרת כ-NULL (אין תעודה)
         const certValue = certificate && certificate.length > 0 ? certificate : null;
 
         const result = await db.query(
@@ -92,30 +97,22 @@ class EquipmentModel {
                 category, 
                 location, 
                 notes, 
-                certificate, 
+                certificate,
+                in_calibration,
+                calibration_not_required,
                 display_order
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-            RETURNING 
-                id as _id,
-                name,
-                serial_number as "serialNumber",
-                company,
-                last_calibration_date as "lastCalibrationDate",
-                next_calibration_date as "nextCalibrationDate",
-                category,
-                location,
-                notes,
-                (certificate IS NOT NULL AND certificate != '') as "hasCertificate",
-                display_order as "displayOrder"`,
-            [name, serialNumber, company, lastCalibrationDate, nextCalibrationDate, 
-             category, location, notes, certValue, displayOrder]
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+            RETURNING ${EQUIPMENT_SELECT}`,
+            [
+                name, serialNumber, company, lastCalibrationDate, nextCalibrationDate,
+                category, location, notes, certValue,
+                !!inCalibration, !!calibrationNotRequired, displayOrder
+            ]
         );
         return result.rows[0];
     }
 
-    // עדכון ציוד
-    // ⚡ עדכון דינמי: מעדכן רק שדות שנשלחים בבקשה. שדה certificate מעודכן רק אם נשלח במפורש.
-    // זה מגן מפני דריסת התעודה כשהקליינט משתמש ב-lazy loading ולא שולח את הקובץ המלא.
+    // עדכון ציוד - עדכון דינמי של שדות שנשלחו בלבד
     static async update(id, equipmentData) {
         const fieldMap = {
             name: 'name',
@@ -127,6 +124,8 @@ class EquipmentModel {
             location: 'location',
             notes: 'notes',
             certificate: 'certificate',
+            inCalibration: 'in_calibration',
+            calibrationNotRequired: 'calibration_not_required',
             displayOrder: 'display_order'
         };
 
@@ -137,9 +136,11 @@ class EquipmentModel {
         for (const [key, column] of Object.entries(fieldMap)) {
             if (key in equipmentData) {
                 let value = equipmentData[key];
-                // מחרוזת ריקה בתעודה נחשבת כהסרת התעודה (NULL)
                 if (key === 'certificate' && value === '') {
                     value = null;
+                }
+                if (key === 'inCalibration' || key === 'calibrationNotRequired') {
+                    value = !!value;
                 }
                 sets.push(`${column} = $${idx}`);
                 values.push(value);
@@ -147,7 +148,6 @@ class EquipmentModel {
             }
         }
 
-        // אם אין שדות לעדכן, החזר את הנתונים הקיימים
         if (sets.length === 0) {
             return await EquipmentModel.getById(id);
         }
@@ -159,18 +159,7 @@ class EquipmentModel {
             UPDATE equipment SET
                 ${sets.join(', ')}
             WHERE id = $${idx}
-            RETURNING 
-                id as _id,
-                name,
-                serial_number as "serialNumber",
-                company,
-                last_calibration_date as "lastCalibrationDate",
-                next_calibration_date as "nextCalibrationDate",
-                category,
-                location,
-                notes,
-                (certificate IS NOT NULL AND certificate != '') as "hasCertificate",
-                display_order as "displayOrder"
+            RETURNING ${EQUIPMENT_SELECT}
         `;
 
         const result = await db.query(query, values);
@@ -210,18 +199,7 @@ class EquipmentModel {
     static async search(query) {
         const searchPattern = `%${query}%`;
         const result = await db.query(
-            `SELECT 
-                id as _id,
-                name,
-                serial_number as "serialNumber",
-                company,
-                last_calibration_date as "lastCalibrationDate",
-                next_calibration_date as "nextCalibrationDate",
-                category,
-                location,
-                notes,
-                (certificate IS NOT NULL AND certificate != '') as "hasCertificate",
-                display_order as "displayOrder"
+            `SELECT ${EQUIPMENT_SELECT}
             FROM equipment 
             WHERE 
                 name ILIKE $1 OR 
@@ -237,4 +215,3 @@ class EquipmentModel {
 }
 
 module.exports = EquipmentModel;
-

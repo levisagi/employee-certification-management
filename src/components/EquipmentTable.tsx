@@ -35,7 +35,7 @@ const EquipmentTable: React.FC<EquipmentTableProps> = ({ equipment, onEdit, onDe
     // עדכון סטטוס לכל ציוד
     const equipmentWithStatus = equipment.map(eq => ({
         ...eq,
-        status: calculateEquipmentStatus(eq.nextCalibrationDate)
+        status: calculateEquipmentStatus(eq.nextCalibrationDate, eq)
     }));
 
     return (

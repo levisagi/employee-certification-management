@@ -1,4 +1,4 @@
 // מספר גרסה של המערכת
 // עדכן מספר זה בכל פעם שמעלים גרסה חדשה
-export const APP_VERSION = '1.1';
+export const APP_VERSION = '1.2';
 

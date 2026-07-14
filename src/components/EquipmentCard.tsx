@@ -31,7 +31,7 @@ const EquipmentCard: React.FC<EquipmentCardProps> = ({
             onUploadCertificate(equipment, file);
         }
     };
-    const status = calculateEquipmentStatus(equipment.nextCalibrationDate);
+    const status = calculateEquipmentStatus(equipment.nextCalibrationDate, equipment);
     const nextDate = new Date(equipment.nextCalibrationDate);
     const today = new Date();
     const diffTime = nextDate.getTime() - today.getTime();
@@ -58,6 +58,20 @@ const EquipmentCard: React.FC<EquipmentCardProps> = ({
             text: 'text-red-700',
             badge: 'bg-red-100 text-red-800',
             label: 'נדרש כיול'
+        },
+        'in-calibration': {
+            bg: 'bg-purple-50',
+            border: 'border-purple-500',
+            text: 'text-purple-700',
+            badge: 'bg-purple-100 text-purple-800',
+            label: 'בכיול כרגע'
+        },
+        'not-required': {
+            bg: 'bg-gray-50',
+            border: 'border-gray-400',
+            text: 'text-gray-700',
+            badge: 'bg-gray-200 text-gray-700',
+            label: 'לא נדרש כיול'
         }
     };
 
@@ -96,9 +110,12 @@ const EquipmentCard: React.FC<EquipmentCardProps> = ({
             </div>
 
             {/* Status Badge */}
-            <div className="mb-3">
+            <div className="mb-3 flex flex-wrap gap-2">
                 <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold ${config.badge}`}>
-                    {config.label} • {diffDays < 0 ? `${Math.abs(diffDays)} ימים באיחור` : `${diffDays} ימים`}
+                    {config.label}
+                    {!equipment.calibrationNotRequired && status !== 'in-calibration' && (
+                        <> • {diffDays < 0 ? `${Math.abs(diffDays)} ימים באיחור` : `${diffDays} ימים`}</>
+                    )}
                 </span>
             </div>
 

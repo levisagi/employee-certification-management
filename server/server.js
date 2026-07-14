@@ -14,9 +14,16 @@ const db = require('./database');
 const EmployeeModel = require('./models/EmployeeModel');
 const EquipmentModel = require('./models/EquipmentModel');
 
-// בדיקת חיבור למסד הנתונים
+// בדיקת חיבור למסד הנתונים + וידוא סכמה
 db.query('SELECT NOW()')
-    .then(() => console.log('✓ Database connection successful'))
+    .then(async () => {
+        console.log('✓ Database connection successful');
+        try {
+            await EquipmentModel.ensureSchema();
+        } catch (err) {
+            console.error('✗ Equipment schema migration failed:', err.message);
+        }
+    })
     .catch(err => console.error('✗ Database connection failed:', err));
 
 // Logging Middleware
